@@ -1,0 +1,19 @@
+{
+  "name": "reviews",
+  "version": "1.0.0",
+  "description": "reviews API",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rpp33-sdc-iris/reviews"
+  },
+  "author": "jp-doyle",
+  "scripts": {
+    "test": "jest test --coverage"
+  },
+  "devDependencies": {
+    "eslint": "^8.11.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-plugin-import": "^2.25.4",
+    "jest": "^27.5.1"
+  }
+}
