@@ -5,6 +5,26 @@ const client = new MongoClient(url);
 const dbName = 'reviews';
 let db;
 
+const getReviews = (productId, page, count, sort) => {
+  return {};
+};
+
+const getProductMetadata = (productId) => {
+  return {};
+};
+
+const addReview = () => {
+
+};
+
+const markReviewHelpful = () => {
+
+};
+
+const markReviewReported = () => {
+
+};
+
 async function connect() {
   try {
     await client.connect();
