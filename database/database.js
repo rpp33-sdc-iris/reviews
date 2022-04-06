@@ -5,25 +5,35 @@ const client = new MongoClient(url);
 const dbName = 'reviews';
 let db;
 
-const getReviews = (productId, page, count, sort) => {
+const getReviews = async (productId, page, count, sort) => {
   // Aggregate data
-    // $match productId
-    // $sort
-    // $limit, based on count
+  const reviews = await db.reviews.aggregate(
+    [
+      {
+        // $match productId
+        $match: { product_id: productId },
+      }, {
+        // $sort
+        $sort: { },
+      }, {
+        // $limit, based on count
+        $limit: { },
+      },
+    ],
+  );
 };
 
-const async getProductMetadata = (productId) => {
-
+const getProductMetadata = async (productId) => {
   try {
-    await db.product_metadata.find({ product_id: productId });
+    const productMetadata = await db.product_metadata.find({ product_id: productId });
+    return productMetadata;
   } catch (error) {
-
-  } finally {
-
+    console.log('Error retrieving product metadata', error);
+    return 0;
   }
 };
 
-const async addReview = () => {
+const addReview = async () => {
   // Add review to reviews collection
     // Generate next review_id
     // Generate timestamp
@@ -31,41 +41,33 @@ const async addReview = () => {
   // Recalculate metadata
 };
 
-const async markReviewHelpful = (reviewId) => {
-
+const markReviewHelpful = async (reviewId) => {
   try {
     await db.reviews('reviews').updateOne(
       { review_id: reviewId },
-      {
-        $inc: { helpfulness: 1 }
-      }
+      { $inc: { helpfulness: 1 } },
     );
+    return 1;
   } catch (error) {
     console.log('Error marking review helpful', error);
-  } finally {
-
+    return 0;
   }
-
 };
 
-const async markReviewReported = () => {
-
+const markReviewReported = async (reviewId) => {
   try {
     await db.reviews('reviews').updateOne(
       { review_id: reviewId },
-      {
-        $set: { reported: true }
-      }
+      { $set: { reported: true } },
     );
+    return 1;
   } catch (error) {
     console.log('Error marking review reported', error);
-  } finally {
-
+    return 0;
   }
-
 };
 
-const async connect= () => {
+const connect = async () => {
   try {
     await client.connect();
     console.log('Connected to database');
@@ -74,6 +76,6 @@ const async connect= () => {
   } catch (error) {
     console.log('Error connecting to database');
   }
-}
+};
 
 connect();
