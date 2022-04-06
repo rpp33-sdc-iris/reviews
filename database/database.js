@@ -6,7 +6,10 @@ const dbName = 'reviews';
 let db;
 
 const getReviews = (productId, page, count, sort) => {
-  return {};
+  // Aggregate data
+    // $match productId
+    // $sort
+    // $limit, based on count
 };
 
 const async getProductMetadata = (productId) => {
@@ -20,8 +23,12 @@ const async getProductMetadata = (productId) => {
   }
 };
 
-const addReview = () => {
-
+const async addReview = () => {
+  // Add review to reviews collection
+    // Generate next review_id
+    // Generate timestamp
+    // Set response to null
+  // Recalculate metadata
 };
 
 const async markReviewHelpful = (reviewId) => {
