@@ -9,23 +9,56 @@ const getReviews = (productId, page, count, sort) => {
   return {};
 };
 
-const getProductMetadata = (productId) => {
-  return {};
+const async getProductMetadata = (productId) => {
+
+  try {
+    await db.product_metadata.find({ product_id: productId });
+  } catch (error) {
+
+  } finally {
+
+  }
 };
 
 const addReview = () => {
 
 };
 
-const markReviewHelpful = () => {
+const async markReviewHelpful = (reviewId) => {
+
+  try {
+    await db.reviews('reviews').updateOne(
+      { review_id: reviewId },
+      {
+        $inc: { helpfulness: 1 }
+      }
+    );
+  } catch (error) {
+    console.log('Error marking review helpful', error);
+  } finally {
+
+  }
 
 };
 
-const markReviewReported = () => {
+const async markReviewReported = () => {
+
+  try {
+    await db.reviews('reviews').updateOne(
+      { review_id: reviewId },
+      {
+        $set: { reported: true }
+      }
+    );
+  } catch (error) {
+    console.log('Error marking review reported', error);
+  } finally {
+
+  }
 
 };
 
-async function connect() {
+const async connect= () => {
   try {
     await client.connect();
     console.log('Connected to database');
