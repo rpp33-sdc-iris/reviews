@@ -21,8 +21,6 @@ api.get('/reviews/meta/', (req, res) => {
 
 api.post('/reviews/', (req, res) => {
   // req.body values NOT trusted
-  const productId = req.body.product_id;
-  const { rating, summary, body, recommend, name, email, photos, characteristics } = req.body;
   //
 });
 
