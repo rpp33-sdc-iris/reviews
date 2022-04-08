@@ -64,7 +64,7 @@ const addReview = async (review) => {
     await db.collection('reviews').insertOne({
       product_id: review.product_id,
       rating: review.rating,
-      date: { '$date': new Date().toISOString() },  // UNTESTED
+      date: { '$date': new Date().toISOString() },
       summary: review.summary,
       body: review.body,
       recommend: review.recommend,
@@ -74,11 +74,10 @@ const addReview = async (review) => {
       response: null,
       helpfulness: 0,
       photos: review.photos,
-      review_id: nextReviewId,                      // UNTESTED
-      characteristics: review.characteristics // id: value
+      review_id: nextReviewId,
+      characteristics: review.characteristics
     });
     nextReviewId += 1;
-    return 1;
   } catch (error) {
     console.log('Erroring adding new review', error);
     return 0;
@@ -100,41 +99,53 @@ const addReview = async (review) => {
         product_id: review.product_id
       }, [
         { $set: { `ratings.${review.rating}`: { $add: [1, `$ratings.${review.rating}`] } } },
-        { $set: { `${recommend}`: { $add: [1, `$recommend.${recommend}`] } } }, //
-        { $set: { characteristics: { $expr: /* resolves to object of objects */ { $arrayToObject: /* resolves to array [["fit",{id: 1, value: 3}],[]] */ {
-          $map: {
-            input: { $objectToArray: '$characteristics' },
-            in: {
-              $zip: [
-                [ '$$this.0' ],
-                [ {
-                  id: "$$this.1.id",
-                  value: {
-                    $toString: {
-                      $divide: [
-                        { $sum: [
-                          { $multiply: [
-                            reviewCount,
-                            { $toInt: {
-                              $toDecimal: '$$this.value'
-                            } }
-                          ] },
-                          review.characteristics['$$this.1.id']
-                        ] },
-                        { $sum: [
-                          reviewCount,
-                          1
-                        ] }
-                      ]
-                    }
+        { $set: { `${recommend}`: { $add: [1, `$recommend.${recommend}`] } } },
+        { $set: {
+          characteristics: {
+            $expr: {
+              $arrayToObject: {
+                $map: {
+                  input: {
+                    $objectToArray: '$characteristics'
+                  },
+                  in: {
+                    $zip: [
+                      [ '$$this.0' ],
+                      [ {
+                        id: "$$this.1.id",
+                        value: {
+                          $toString: {
+                            $divide: [
+                              { $sum: [
+                                { $multiply: [
+                                  reviewCount,
+                                  { $toInt: {
+                                    $toDecimal: '$$this.value'
+                                  } }
+                                ] },
+                                review.characteristics['$$this.1.id']
+                              ] },
+                              { $sum: [
+                                reviewCount,
+                                1
+                              ] }
+                            ]
+                          }
+                        }
+                      } ]
+                    ]
                   }
-                } ]
-              ]
+                }
+              }
             }
           }
-        } } } }
-      }]
+        } }
+     ]
     );
+    return 1;
+  } catch (error) {
+    console.log('Error updating product metadata', error);
+    return 0;
   }
 };
 
