@@ -17,6 +17,8 @@ const connect = async () => {
   }
 };
 
+connect();
+
 const getProductMetadata = async (productId) => {
   try {
     const productMetadata = await db.product_metadata.find({ product_id: productId });
@@ -99,6 +101,7 @@ const postReview = async (review) => {
     nextReviewId = result.count + 1;
   } catch (error) {
     console.log('Error counting number of reviews', error);
+    return 0;
   }
   //
   try {
