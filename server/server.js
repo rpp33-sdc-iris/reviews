@@ -85,3 +85,5 @@ api.put('reviews/:review_id/report', (req, res) => {
 api.listen(port, () => {
   console.log(`Listening on port ${port}`);
 });
+
+module.exports.db = db;

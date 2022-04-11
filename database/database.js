@@ -1,27 +1,27 @@
-const { MongoClient } = require('mongodb');
+// const { MongoClient } = require('mongodb');
 
-const url = 'mongodb://localhost:27017';
-const client = new MongoClient(url);
-const dbName = 'reviews_test';
+// const url = 'mongodb://localhost:27017';
+// const client = new MongoClient(url);
+// const dbName = 'reviews_test';
 
-let db;
+// let db;
 
-const connect = async () => {
+// const connect = async () => {
+//   try {
+//     await client.connect();
+//     console.log('Connected to database');
+//     db = client.db(dbName);
+//     module.exports = db;
+//   } catch (error) {
+//     console.log('Error connecting to database');
+//   }
+// };
+
+// connect();
+
+const getProductMetadata = async (dbase, collection, productId) => {
   try {
-    await client.connect();
-    console.log('Connected to database');
-    db = client.db(dbName);
-    module.exports = db;
-  } catch (error) {
-    console.log('Error connecting to database');
-  }
-};
-
-connect();
-
-const getProductMetadata = async (productId) => {
-  try {
-    const productMetadata = await db.product_metadata.find({ product_id: productId });
+    const productMetadata = await dbase.collection(collection).findOne({ product_id: productId });
     return productMetadata;
   } catch (error) {
     console.log('Error retrieving product metadata', error);
@@ -190,7 +190,8 @@ const postReview = async (review) => {
   }
 };
 
-module.exports.db = db;
+// module.exports.client = client;
+// module.exports.db = db;
 module.exports.getProductMetadata = getProductMetadata;
 module.exports.getReviews = getReviews;
 module.exports.markReviewHelpful = markReviewHelpful;

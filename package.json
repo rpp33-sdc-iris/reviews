@@ -8,10 +8,12 @@
   },
   "author": "jp-doyle",
   "scripts": {
-    "test": "jest test --coverage",
+    "test": "jest test",
+    "test-coverage": "jest test --coverage",
     "server": "nodemon ./server/server.js"
   },
   "devDependencies": {
+    "@shelf/jest-mongodb": "^2.2.1",
     "eslint": "^8.11.0",
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-plugin-import": "^2.25.4",
