@@ -29,7 +29,7 @@ const getProductMetadata = async (dbase, collection, productId) => {
   }
 };
 
-const getReviews = async (productId, sort) => {
+const getReviews = async (db, collection, productId, sort) => {
   let sortBy;
   //
   if (sort === 'relevant') {
@@ -41,7 +41,8 @@ const getReviews = async (productId, sort) => {
   }
   //
   try {
-    const reviews = await db.reviews.aggregate([
+    const reviewsCol = db.collection(collection);
+    const reviews = await reviewsCol.aggregate([
       {
         $match: {
           product_id: productId,
@@ -62,9 +63,9 @@ const getReviews = async (productId, sort) => {
   }
 };
 
-const markReviewHelpful = async (reviewId) => {
+const markReviewHelpful = async (db, collection, reviewId) => {
   try {
-    await db.reviews('reviews').updateOne(
+    await db.collection(collection).updateOne(
       { review_id: reviewId },
       { $inc: { helpfulness: 1 } },
     );
@@ -75,9 +76,9 @@ const markReviewHelpful = async (reviewId) => {
   }
 };
 
-const markReviewReported = async (reviewId) => {
+const markReviewReported = async (db, collection, reviewId) => {
   try {
-    await db.reviews('reviews').updateOne(
+    await db.collection(collection).updateOne(
       { review_id: reviewId },
       { $set: { reported: true } },
     );
@@ -88,24 +89,36 @@ const markReviewReported = async (reviewId) => {
   }
 };
 
-const postReview = async (review) => {
+const postReview = async (db, reviewsCol, productMetadataCol, review) => {
   //
   let nextReviewId; // also equal to number of reviews
+  let metadata;
   //
   try {
-    const result = await db.reviews.aggregate([
-      { $count: 'count' },
-    ], {
-      allowDiskUse: true,
-    });
-    nextReviewId = result.count + 1;
+    const result = await db.collection(reviewsCol).countDocuments();
+    nextReviewId = result + 1;
   } catch (error) {
     console.log('Error counting number of reviews', error);
     return 0;
   }
-  //
+  // Build a new object in the form of characteristics: { characteristic: { value: # } }
   try {
-    await db.collection('reviews').insertOne({
+    metadata = await db.collection(productMetadataCol).findOne({ product_id: review.product_id });
+
+    for (let metaCharacteristic in metadata.characteristics) {
+      for (let characteristicId in review.characteristics) {
+        if (characteristicId === metadata.characteristics[metaCharacteristic].id) {
+          metadata.characteristics[metaCharacteristic].value = review.characteristics[characteristicId];
+          delete metadata.characteristics[metaCharacteristic].id;
+        }
+      }
+    }
+  } catch (error) {
+    console.log('Error building characteristics property', error);
+  }
+
+  try {
+    await db.collection(reviewsCol).insertOne({
       product_id: review.product_id,
       rating: review.rating,
       date: { $date: new Date().toISOString() },
@@ -119,13 +132,14 @@ const postReview = async (review) => {
       helpfulness: 0,
       photos: review.photos.map((uri) => ({ url: uri })),
       review_id: nextReviewId,
-      characteristics: review.characteristics,
+      characteristics: metadata.characteristics,
     });
+    return 1;
   } catch (error) {
     console.log('Erroring adding new review', error);
     return 0;
   }
-  //
+  /*
   try {
     await db.collection('product_metadata').updateOne({
       product_id: review.product_id,
@@ -188,6 +202,7 @@ const postReview = async (review) => {
     console.log('Error updating product metadata', error);
     return 0;
   }
+  */
 };
 
 // module.exports.client = client;
