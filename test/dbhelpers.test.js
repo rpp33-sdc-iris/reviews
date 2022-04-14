@@ -1,14 +1,14 @@
 const { MongoClient } = require('mongodb');
-const { getProductMetadata } = require('../database/database');
-const { getReviews } = require('../database/database');
-const { markReviewHelpful } = require('../database/database');
-const { markReviewReported } = require('../database/database');
-const { postReview } = require('../database/database');
+const { getProductMetadata } = require('../database/helpers');
+const { getReviews } = require('../database/helpers');
+const { markReviewHelpful } = require('../database/helpers');
+const { markReviewReported } = require('../database/helpers');
+const { postReview } = require('../database/helpers');
 
-jest.setTimeout(20000);
+jest.setTimeout(30000);
 
 describe('Database helper functions', () => {
-
+  //
   let connection;
   let db;
   let reviewsTestCol;
@@ -61,7 +61,7 @@ describe('Database helper functions', () => {
   });
 
   describe('getReviews', () => {
-
+    //
     it('returns reviews for a valid product_id', async () => {
       const cursor = await getReviews(db, 'reviews_test', 1, 'relevant');
       const actual = await cursor.toArray();
@@ -76,7 +76,7 @@ describe('Database helper functions', () => {
   });
 
   describe('markReviewHelpful', () => {
-
+    //
     it('increases a review\'s helpfulness count', async () => {
       await markReviewHelpful(db, 'reviews_test', 1);
       const actual = await reviewsTestCol.findOne({ review_id: 1 });
@@ -101,8 +101,8 @@ describe('Database helper functions', () => {
     });
   });
 
-  describe('postReview', () => {
-
+  describe.only('postReview', () => {
+    //
     it('adds a review to the reviews collection', async () => {
       const review = {
         product_id: 1,
@@ -121,7 +121,7 @@ describe('Database helper functions', () => {
           1: 5, 2: 5, 3: 5, 4: 5,
         },
       };
-      await postReview(db, 'reviews_test', 'product_metadata_test_post', review);
+      await postReview(db, 'reviews_test', 'product_metadata_test', review);
       const actual = await reviewsTestCol.countDocuments();
       expect(actual).toBe(5774953);
       await reviewsTestCol.deleteOne({ review_id: 5774953 });

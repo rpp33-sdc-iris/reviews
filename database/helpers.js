@@ -31,7 +31,7 @@ const getReviews = async (db, collection, productId, sort) => {
         $project: {
           reported: 0,
           reviewer_email: 0,
-        }
+        },
       }, {
         $sort: sortBy,
       }, {
@@ -40,7 +40,7 @@ const getReviews = async (db, collection, productId, sort) => {
     ], {
       allowDiskUse: true,
     });
-    return reviews;
+    return reviews.toArray();
   } catch (error) {
     console.log('Error retrieving reviews', error);
     return 0;
@@ -75,6 +75,7 @@ const markReviewReported = async (db, collection, reviewId) => {
 
 const postReview = async (db, reviewsCol, productMetadataCol, review) => {
   //
+  const newReview = review;
   let nextReviewId;
   let metadata;
   //
@@ -88,12 +89,17 @@ const postReview = async (db, reviewsCol, productMetadataCol, review) => {
 
   try {
     metadata = await db.collection(productMetadataCol).findOne({ product_id: review.product_id });
-    const metaCharacteristics = metadata.characteristics;
-    for (let metaCharacteristic in metaCharacteristics) {
-      for (let characteristicId in review.characteristics) {
-        if (Number(characteristicId) === metaCharacteristics[metaCharacteristic].id) {
-          review.characteristics[metaCharacteristic] = { value: review.characteristics[characteristicId] };
-          delete review.characteristics[characteristicId];
+
+    const metaCharacteristicKeys = Object.keys(metadata.characteristics);
+    const metaCharacteristicValues = Object.values(metadata.characteristics);
+    const reviewCharacteristicKeys = Object.keys(newReview.characteristics);
+    const reviewCharValues = Object.values(newReview.characteristics);
+
+    for (let i = 0; i < metaCharacteristicKeys.length; i += 1) {
+      for (let j = 0; j < reviewCharacteristicKeys.length; j += 1) {
+        if (Number(reviewCharacteristicKeys[j]) === metaCharacteristicValues[i].id) {
+          newReview.characteristics[metaCharacteristicKeys[i]] = { value: reviewCharValues[j] };
+          delete newReview.characteristics[reviewCharacteristicKeys[j]];
         }
       }
     }
@@ -125,34 +131,35 @@ const postReview = async (db, reviewsCol, productMetadataCol, review) => {
   }
 
   try {
-    const numberOfReviews = await db.collection(reviewsCol).countDocuments({ product_id: review.product_id });
-    const metadata = await getProductMetadata(db, productMetadataCol, review.product_id);
-    delete metadata['_id'];
+    const numRs = await db.collection(reviewsCol).countDocuments({ product_id: review.product_id });
+    metadata = await getProductMetadata(db, productMetadataCol, review.product_id);
+    delete metadata._id;
 
     if (review.rating === 1) {
-      metadata.ratings['1'] += 1;
+      metadata.ratings['1'] = (Number(metadata.ratings['1']) + 1).toString();
     } else if (review.rating === 2) {
-      metadata.ratings['2'] += 1;
+      metadata.ratings['2'] = (Number(metadata.ratings['2']) + 1).toString();
     } else if (review.rating === 3) {
-      metadata.ratings['3'] += 1;
+      metadata.ratings['3'] = (Number(metadata.ratings['3']) + 1).toString();
     } else if (review.rating === 4) {
-      metadata.ratings['4'] += 1;
+      metadata.ratings['4'] = (Number(metadata.ratings['4']) + 1).toString();
     } else {
-      metadata.ratings['5'] += 1;
+      metadata.ratings['5'] = (Number(metadata.ratings['5']) + 1).toString();
     }
 
     if (review.recommend) {
-      metadata.recommended.true += 1;
+      metadata.recommended.true = (Number(metadata.recommended.true) + 1).toString();
     } else {
-      metadata.recommended.false += 1;
+      metadata.recommended.false = (Number(metadata.recommended.false) + 1).toString();
     }
 
-    const metaCharacteristics = metadata.characteristics;
-    for (let metaCharacteristic in metaCharacteristics) {
-
-      metaCharacteristics[metaCharacteristic]['value'] = ((Number(metaCharacteristics[metaCharacteristic]['value']) * (numberOfReviews - 1)) + Number(review.characteristics[metaCharacteristic]['value'])) / numberOfReviews;
-
-      metaCharacteristics[metaCharacteristic]['value'] = metaCharacteristics[metaCharacteristic].value.toString();
+    const rC = review.characteristics;
+    const mO = metadata.characteristics;
+    const mK = Object.keys(mO);
+    const metaChars = Object.values(mO);
+    for (let i = 0; i < mK.length; i += 1) {
+      mO[mK[i]].value = ((Number(metaChars[i].value) * (numRs - 1)) + rC[mK[i]].value) / numRs;
+      mO[mK[i]].value = mO[mK[i]].value.toString();
     }
     await db.collection(productMetadataCol).replaceOne({ product_id: review.product_id }, metadata);
     return 1;
@@ -160,7 +167,7 @@ const postReview = async (db, reviewsCol, productMetadataCol, review) => {
     console.log('Error updating product metadata', error);
     return 0;
   }
-}
+};
 
 module.exports.getProductMetadata = getProductMetadata;
 module.exports.getReviews = getReviews;

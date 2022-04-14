@@ -10,7 +10,7 @@
   "scripts": {
     "test": "jest test",
     "test-coverage": "jest test --coverage",
-    "server": "nodemon ./server/server.js"
+    "start-server": "nodemon ./server/server.js"
   },
   "devDependencies": {
     "@shelf/jest-mongodb": "^2.2.1",
