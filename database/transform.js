@@ -594,3 +594,30 @@ transform()
   .finally(() => {
     client.close();
   });
+
+var pipeline = {
+  $addFields: {
+    characteristics: {
+      $map: {
+        input: '$chars'
+        // return [ field ("Fit"), value (object) ]
+        in: {
+          $zip: [
+            [ '$$this.name' ],
+            [ {
+              id: '$$this.id',
+              value: `$characteristics[${'$$this.name'}].value`
+            } ]
+          ]
+        }
+      }
+    }
+  },
+  $addFields: {
+    characteristics: {
+      $arrayToObject: {
+        '$characteristics' // [ [ field ("Fit"), value ( { id: #, value: string } )], etc.... ]
+      }
+    }
+  }
+}

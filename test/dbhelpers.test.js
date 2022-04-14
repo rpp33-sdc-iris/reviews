@@ -8,7 +8,7 @@ const { postReview } = require('../database/database');
 jest.setTimeout(20000);
 
 describe('Database helper functions', () => {
-  //
+
   let connection;
   let db;
   let reviewsTestCol;
@@ -60,7 +60,7 @@ describe('Database helper functions', () => {
     });
   });
 
-  describe.only('getReviews', () => {
+  describe('getReviews', () => {
 
     it('returns reviews for a valid product_id', async () => {
       const cursor = await getReviews(db, 'reviews_test', 1, 'relevant');
@@ -76,7 +76,7 @@ describe('Database helper functions', () => {
   });
 
   describe('markReviewHelpful', () => {
-    //
+
     it('increases a review\'s helpfulness count', async () => {
       await markReviewHelpful(db, 'reviews_test', 1);
       const actual = await reviewsTestCol.findOne({ review_id: 1 });
@@ -102,7 +102,7 @@ describe('Database helper functions', () => {
   });
 
   describe('postReview', () => {
-    //
+
     it('adds a review to the reviews collection', async () => {
       const review = {
         product_id: 1,
@@ -121,10 +121,10 @@ describe('Database helper functions', () => {
           1: 5, 2: 5, 3: 5, 4: 5,
         },
       };
-      await postReview(db, 'reviews_test', 'product_metadata_test', review);
+      await postReview(db, 'reviews_test', 'product_metadata_test_post', review);
       const actual = await reviewsTestCol.countDocuments();
       expect(actual).toBe(5774953);
-      // await reviewsTestCol.deleteOne({ review_id: 5774953 });
+      await reviewsTestCol.deleteOne({ review_id: 5774953 });
     });
   });
 });
