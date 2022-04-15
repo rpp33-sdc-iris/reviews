@@ -1,14 +1,26 @@
-const getProductMetadata = async (db, collection, productId) => {
+const { connectToDatabase } = require('./database');
+
+const url = process.env.DB_URL;
+const dbName = process.env.DB_NAME;
+const reviewsCollectionName = process.env.REVIEWS_COLLECTION_NAME;
+const productMetadataCollectionName = process.env.PRODUCTMETADATA_COLLECTION_NAME;
+
+const getProductMetadata = async (productId) => {
+  let mongoClient;
+
   try {
-    const productMetadata = await db.collection(collection).findOne({ product_id: productId });
+    mongoClient = await connectToDatabase(url);
+    const db = mongoClient.db(dbName);
+    const collection = db.collection(productMetadataCollectionName);
+    const productMetadata = await collection.findOne({ product_id: productId });
     return productMetadata;
-  } catch (error) {
-    console.log('Error retrieving product metadata', error);
-    return 0;
+  } finally {
+    await mongoClient.close();
   }
 };
 
-const getReviews = async (db, collection, productId, sort) => {
+const getReviews = async (productId, sort) => {
+  let mongoClient;
   let sortBy;
   //
   if (sort === 'relevant') {
@@ -20,8 +32,10 @@ const getReviews = async (db, collection, productId, sort) => {
   }
   //
   try {
-    const reviewsCol = db.collection(collection);
-    const reviews = await reviewsCol.aggregate([
+    mongoClient = await connectToDatabase(url);
+    const db = mongoClient.db(dbName);
+    const collection = db.collection(reviewsCollectionName);
+    const reviews = await collection.aggregate([
       {
         $match: {
           product_id: productId,
@@ -41,54 +55,58 @@ const getReviews = async (db, collection, productId, sort) => {
       allowDiskUse: true,
     });
     return reviews.toArray();
-  } catch (error) {
-    console.log('Error retrieving reviews', error);
-    return 0;
+  } finally {
+    await mongoClient.close();
   }
 };
 
-const markReviewHelpful = async (db, collection, reviewId) => {
+const markReviewHelpful = async (reviewId) => {
+  let mongoClient;
+
   try {
-    await db.collection(collection).updateOne(
+    mongoClient = await connectToDatabase(url);
+    const db = mongoClient.db(dbName);
+    const collection = db.collection(reviewsCollectionName);
+    await collection.updateOne(
       { review_id: reviewId },
       { $inc: { helpfulness: 1 } },
     );
-    return 1;
-  } catch (error) {
-    console.log('Error marking review helpful', error);
-    return 0;
+  } finally {
+    await mongoClient.close();
   }
 };
 
-const markReviewReported = async (db, collection, reviewId) => {
+const markReviewReported = async (reviewId) => {
+  let mongoClient;
+
   try {
-    await db.collection(collection).updateOne(
+    mongoClient = await connectToDatabase(url);
+    const db = mongoClient.db(dbName);
+    const collection = db.collection(reviewsCollectionName);
+    await collection.updateOne(
       { review_id: reviewId },
       { $set: { reported: true } },
     );
-    return 1;
-  } catch (error) {
-    console.log('Error marking review reported', error);
-    return 0;
+  } finally {
+    await mongoClient.close();
   }
 };
 
-const postReview = async (db, reviewsCol, productMetadataCol, review) => {
-  //
+const postReview = async (review) => {
+  let mongoClient;
+
   const newReview = review;
-  let nextReviewId;
-  let metadata;
-  //
-  try {
-    const result = await db.collection(reviewsCol).countDocuments();
-    nextReviewId = result + 1;
-  } catch (error) {
-    console.log('Error counting number of reviews', error);
-    return 0;
-  }
 
   try {
-    metadata = await db.collection(productMetadataCol).findOne({ product_id: review.product_id });
+    mongoClient = await connectToDatabase(url);
+    const db = mongoClient.db(dbName);
+    const reviewsCollection = db.collection(reviewsCollectionName);
+    const productMetadataCollection = db.collection(productMetadataCollectionName);
+
+    const result = await reviewsCollection.countDocuments();
+    const nextReviewId = result + 1;
+
+    let metadata = await getProductMetadata(review.product_id);
 
     const metaCharacteristicKeys = Object.keys(metadata.characteristics);
     const metaCharacteristicValues = Object.values(metadata.characteristics);
@@ -103,13 +121,8 @@ const postReview = async (db, reviewsCol, productMetadataCol, review) => {
         }
       }
     }
-  } catch (error) {
-    console.log('Error building characteristics property', error);
-    return 0;
-  }
 
-  try {
-    await db.collection(reviewsCol).insertOne({
+    await reviewsCollection.insertOne({
       product_id: review.product_id,
       rating: review.rating,
       date: { $date: new Date().toISOString() },
@@ -125,14 +138,8 @@ const postReview = async (db, reviewsCol, productMetadataCol, review) => {
       review_id: nextReviewId,
       characteristics: review.characteristics,
     });
-  } catch (error) {
-    console.log('Erroring adding new review', error);
-    return 0;
-  }
 
-  try {
-    const numRs = await db.collection(reviewsCol).countDocuments({ product_id: review.product_id });
-    metadata = await getProductMetadata(db, productMetadataCol, review.product_id);
+    const numRs = await reviewsCollection.countDocuments({ product_id: review.product_id });
     delete metadata._id;
 
     if (review.rating === 1) {
@@ -161,11 +168,9 @@ const postReview = async (db, reviewsCol, productMetadataCol, review) => {
       mO[mK[i]].value = ((Number(metaChars[i].value) * (numRs - 1)) + rC[mK[i]].value) / numRs;
       mO[mK[i]].value = mO[mK[i]].value.toString();
     }
-    await db.collection(productMetadataCol).replaceOne({ product_id: review.product_id }, metadata);
-    return 1;
-  } catch (error) {
-    console.log('Error updating product metadata', error);
-    return 0;
+    await productMetadataCollection.replaceOne({ product_id: review.product_id }, metadata);
+  } finally {
+    mongoClient.close();
   }
 };
 

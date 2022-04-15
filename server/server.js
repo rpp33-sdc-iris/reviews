@@ -1,33 +1,14 @@
 const express = require('express');
-const { MongoClient } = require('mongodb');
 
-const { getProductMetadata } = require('../database/helpers');
-const { getReviews } = require('../database/helpers');
-const { markReviewHelpful } = require('../database/helpers');
-const { markReviewReported } = require('../database/helpers');
-const { postReview } = require('../database/helpers');
+const { getProductMetadata } = require('../database/dbhelpers');
+const { getReviews } = require('../database/dbhelpers');
+const { markReviewHelpful } = require('../database/dbhelpers');
+const { markReviewReported } = require('../database/dbhelpers');
+const { postReview } = require('../database/dbhelpers');
 
 const api = express();
 api.use(express.urlencoded());
 const port = 8080;
-
-let connection;
-let db;
-
-const connectToDB = async () => {
-  try {
-    connection = await MongoClient.connect('mongodb://localhost:27017/reviews_test', {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    db = await connection.db();
-    console.log('Connected to reviews_test database');
-  } catch (error) {
-    console.log('Error connecting to db', error);
-  }
-};
-
-connectToDB();
 
 api.get('/reviews/', (req, res) => {
   // product_id value NOT trusted
@@ -106,3 +87,5 @@ api.put('reviews/:review_id/report', (req, res) => {
 api.listen(port, () => {
   console.log(`Listening on port ${port}`);
 });
+
+module.exports.api = api;
