@@ -1,39 +1,44 @@
-const { MongoClient } = require('mongodb');
+const { config } = require('dotenv');
+
+config();
+
+const { connectToDatabase } = require('../database/database');
 const { getProductMetadata } = require('../database/dbhelpers');
 const { getReviews } = require('../database/dbhelpers');
 const { markReviewHelpful } = require('../database/dbhelpers');
 const { markReviewReported } = require('../database/dbhelpers');
 const { postReview } = require('../database/dbhelpers');
 
-jest.setTimeout(30000);
+let dbURL;
+let dbName;
+let reviewsCollectionName;
+let productMetadataCollectionName;
 
-describe.skip('Database helper functions', () => {
+if (process.env.ENVIRONMENT === 'local-dev') {
+  dbURL = process.env.LOCAL_DEV_DB_URL;
+  dbName = process.env.LOCAL_DEV_DB_NAME;
+  reviewsCollectionName = process.env.LOCAL_DEV_REVIEWS_COLLECTION_NAME;
+  productMetadataCollectionName = process.env.LOCAL_DEV_PRODUCTMETADATA_COLLECTION_NAME;
+} else if (process.env.ENVIRONMENT === 'local-prod') {
+  dbURL = process.env.LOCAL_PROD_DB_URL;
+  dbName = process.env.LOCAL_PROD_DB_NAME;
+  reviewsCollectionName = process.env.LOCAL_PROD_REVIEWS_COLLECTION_NAME;
+  productMetadataCollectionName = process.env.LOCAL_PROD_PRODUCTMETADATA_COLLECTION_NAME;
+} else if (process.env.ENVIRONMENT === 'deployed-dev') {
+  dbURL = process.env.DEPLOYED_DEV_DB_URL;
+  dbName = process.env.DEPLOYED_DEV_DB_NAME;
+  reviewsCollectionName = process.env.DEPLOYED_DEV_REVIEWS_COLLECTION_NAME;
+  productMetadataCollectionName = process.env.DEPLOYED_DEV_PRODUCTMETADATA_COLLECTION_NAME;
+} else if (process.env.ENVIRONMENT === 'deployed-prod') {
+  dbURL = process.env.DEPLOYED_PROD_DB_URL;
+  dbName = process.env.DEPLOYED_PROD_DB_NAME;
+  reviewsCollectionName = process.env.DEPLOYED_PROD_REVIEWS_COLLECTION_NAME;
+  productMetadataCollectionName = process.env.DEPLOYED_PROD_PRODUCTMETADATA_COLLECTION_NAME;
+}
+
+describe('Database helper functions', () => {
   //
-  let connection;
-  let db;
-  let reviewsTestCol;
-  let productMetadataTestCol;
-
-  beforeAll(async () => {
-    try {
-      connection = await MongoClient.connect('mongodb://localhost:27017/reviews_test', {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-      });
-      db = await connection.db();
-      console.log('Connected to reviews_test database');
-      reviewsTestCol = db.collection('reviews_test');
-      productMetadataTestCol = db.collection('product_metadata_test');
-    } catch (error) {
-      console.log('Error connecting to db', error);
-    }
-  });
-
-  afterAll(async () => {
-    await connection.close();
-  });
-
-  describe('getProductMetadata', () => {
+  describe('getProductMetadata()', () => {
     //
     it('returns product metadata for a valid product_id', async () => {
       const expected = {
@@ -47,55 +52,63 @@ describe.skip('Database helper functions', () => {
           Quality: { id: 5, value: '4.2' },
         },
       };
-      const actual = await getProductMetadata(db, 'product_metadata_test', 2);
+      const actual = await getProductMetadata(2);
       expect(actual).toStrictEqual(expected);
     });
 
     it('returns null for an invalid product_id', async () => {
-      const actual = await getProductMetadata(db, 'product_metadata_test', 0);
-      expect(actual).toBe(null);
+      await expect(getProductMetadata(0)).rejects.toThrow('Invalid product_id');
     });
   });
 
-  describe('getReviews', () => {
+  describe('getReviews()', () => {
     //
     it('returns reviews for a valid product_id', async () => {
-      const actual = await getReviews(db, 'reviews_test', 2, 'relevant');
+      const actual = await getReviews(2, 'relevant');
       expect(actual.length).toBe(5);
     });
 
     it('does not return reviews for an invalid product_id', async () => {
-      const actual = await getReviews(db, 'reviews_test', 0, 'relevant');
-      expect(actual.length).toBe(0);
+      await expect(getReviews(0)).rejects.toThrow('Invalid product_id');
+      // const actual = await getReviews(0, 'relevant');
+      // expect(actual.length).toBe(0);
     });
   });
 
-  describe('markReviewHelpful', () => {
+  describe('markReviewHelpful()', () => {
     //
     it('increases a review\'s helpfulness count', async () => {
-      await markReviewHelpful(db, 'reviews_test', 1);
-      const actual = await reviewsTestCol.findOne({ review_id: 1 });
-      expect(actual.helpfulness).toBe(9);
-      await reviewsTestCol.updateOne(
-        { review_id: 1 },
+      await markReviewHelpful(3);
+      const mongoClient = await connectToDatabase(dbURL);
+      const db = mongoClient.db(dbName);
+      const collection = db.collection(reviewsCollectionName);
+      const actual = await collection.findOne({ review_id: 3 });
+      expect(actual.helpfulness).toBe(6);
+      await collection.updateOne(
+        { review_id: 3 },
         { $inc: { helpfulness: -1 } },
       );
+      await mongoClient.close();
     });
   });
 
-  describe('markReviewReported', () => {
+  describe('markReviewReported()', () => {
     //
     it('sets a review\'s reported property to true', async () => {
-      await markReviewReported(db, 'reviews_test', 1);
-      const actual = await reviewsTestCol.findOne({ review_id: 1 });
+      await markReviewReported(3);
+      const mongoClient = await connectToDatabase(dbURL);
+      const db = mongoClient.db(dbName);
+      const collection = db.collection(reviewsCollectionName);
+      const actual = await collection.findOne({ review_id: 3 });
       expect(actual.reported).toBe(true);
-      await reviewsTestCol.updateOne(
-        { review_id: 1 },
+      await collection.updateOne(
+        { review_id: 3 },
         { $set: { reported: false } },
       );
+      await mongoClient.close();
     });
   });
-
+  /*
   describe('postReview', () => {
     //
     it('adds a review to the reviews collection', async () => {
@@ -122,4 +135,5 @@ describe.skip('Database helper functions', () => {
       await reviewsTestCol.deleteOne({ review_id: 5774953 });
     });
   });
+  */
 });

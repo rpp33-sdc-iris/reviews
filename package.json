@@ -8,7 +8,7 @@
   },
   "author": "jp-doyle",
   "scripts": {
-    "test": "jest test",
+    "test": "jest test --detectOpenHandles",
     "test-coverage": "jest test --coverage",
     "start-server": "nodemon ./server/server.js"
   },

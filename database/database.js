@@ -1,7 +1,4 @@
-const { config } = require('dotenv');
 const { MongoClient } = require('mongodb');
-
-config();
 
 const connectToDatabase = async (url) => {
   //
