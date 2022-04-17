@@ -66,6 +66,12 @@ const getReviews = async (productId, sort) => {
     if (metadata === null) {
       throw new Error('Invalid product_id');
     } else {
+    // *** Commented query code comparable to getreadtimes.js script
+    // const findCursor = await reviewsCollection.find({ product_id: productId, reported: false });
+    // const projectCursor = await findCursor.project({ reported: 0, reviewer_email: 0 });
+    // const sortCursor = await projectCursor.sort(sortBy);
+    // const limitCursor = await sortCursor.limit(1000);
+    // const reviews = await limitCursor.toArray();
       const cursor = await reviewsCollection.aggregate([
         {
           $match: {

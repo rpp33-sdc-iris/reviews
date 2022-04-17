@@ -10,7 +10,8 @@
   "scripts": {
     "test": "jest test --detectOpenHandles",
     "test-coverage": "jest test --coverage",
-    "start-server": "nodemon ./server/server.js"
+    "start-server": "nodemon ./server/server.js",
+    "getdbreadtimes": "node ./database/getdbreadtimes"
   },
   "devDependencies": {
     "@shelf/jest-mongodb": "^2.2.1",
