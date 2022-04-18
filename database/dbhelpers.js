@@ -1,31 +1,9 @@
 const { connectToDatabase } = require('./database');
 
-let dbURL;
-let dbName;
-let reviewsCollectionName;
-let productMetadataCollectionName;
-
-if (process.env.ENVIRONMENT === 'local-dev') {
-  dbURL = process.env.LOCAL_DEV_DB_URL;
-  dbName = process.env.LOCAL_DEV_DB_NAME;
-  reviewsCollectionName = process.env.LOCAL_DEV_REVIEWS_COLLECTION_NAME;
-  productMetadataCollectionName = process.env.LOCAL_DEV_PRODUCTMETADATA_COLLECTION_NAME;
-} else if (process.env.ENVIRONMENT === 'local-prod') {
-  dbURL = process.env.LOCAL_PROD_DB_URL;
-  dbName = process.env.LOCAL_PROD_DB_NAME;
-  reviewsCollectionName = process.env.LOCAL_PROD_REVIEWS_COLLECTION_NAME;
-  productMetadataCollectionName = process.env.LOCAL_PROD_PRODUCTMETADATA_COLLECTION_NAME;
-} else if (process.env.ENVIRONMENT === 'deployed-dev') {
-  dbURL = process.env.DEPLOYED_DEV_DB_URL;
-  dbName = process.env.DEPLOYED_DEV_DB_NAME;
-  reviewsCollectionName = process.env.DEPLOYED_DEV_REVIEWS_COLLECTION_NAME;
-  productMetadataCollectionName = process.env.DEPLOYED_DEV_PRODUCTMETADATA_COLLECTION_NAME;
-} else if (process.env.ENVIRONMENT === 'deployed-prod') {
-  dbURL = process.env.DEPLOYED_PROD_DB_URL;
-  dbName = process.env.DEPLOYED_PROD_DB_NAME;
-  reviewsCollectionName = process.env.DEPLOYED_PROD_REVIEWS_COLLECTION_NAME;
-  productMetadataCollectionName = process.env.DEPLOYED_PROD_PRODUCTMETADATA_COLLECTION_NAME;
-}
+const dbURL = process.env.DB_URL;
+const dbName = process.env.DB_NAME;
+const reviewsCollectionName = process.env.REVIEWS_COLLECTION_NAME;
+const productMetadataCollectionName = process.env.PRODUCTMETADATA_COLLECTION_NAME;
 
 const getProductMetadata = async (productId) => {
   let mongoClient;
@@ -50,9 +28,9 @@ const getReviews = async (productId, sort) => {
   let sortBy;
   //
   if (sort === 'relevant') {
-    sortBy = { helpfulness: -1, date: -1 };
+    sortBy = { helpfulness: -1, dateType: -1 };
   } else if (sort === 'newest') {
-    sortBy = { date: -1 };
+    sortBy = { dateType: -1 };
   } else if (sort === 'helpfulness') {
     sortBy = { helpfulness: -1 };
   }
@@ -66,33 +44,36 @@ const getReviews = async (productId, sort) => {
     if (metadata === null) {
       throw new Error('Invalid product_id');
     } else {
-    // *** Commented query code comparable to getreadtimes.js script
-    // const findCursor = await reviewsCollection.find({ product_id: productId, reported: false });
-    // const projectCursor = await findCursor.project({ reported: 0, reviewer_email: 0 });
-    // const sortCursor = await projectCursor.sort(sortBy);
-    // const limitCursor = await sortCursor.limit(1000);
-    // const reviews = await limitCursor.toArray();
-      const cursor = await reviewsCollection.aggregate([
-        {
-          $match: {
-            product_id: productId,
-            reported: false,
-          },
-        }, {
-          $project: {
-            reported: 0,
-            reviewer_email: 0,
-          },
-        }, {
-          $sort: sortBy,
-        }, {
-          $limit: 1000,
-        },
-      ], {
-        allowDiskUse: true,
-      });
-      const reviews = await cursor.toArray();
+      const findCursor = await reviewsCollection.find({ product_id: productId, reported: false });
+      const projectCursor = await findCursor.project({ reported: 0, reviewer_email: 0, dateType: 0 });
+      const sortCursor = await projectCursor.sort(sortBy);
+      const limitCursor = await sortCursor.limit(1000);
+      const reviews = await limitCursor.toArray();
       return reviews;
+    // *** Commented query code comparable to getreadtimes.js script
+    //   const cursor = await reviewsCollection.aggregate([
+    //     {
+    //       $match: {
+    //         product_id: productId,
+    //         reported: false,
+    //       },
+    //     }, {
+    //       $project: {
+    //         reported: 0,
+    //         reviewer_email: 0,
+    //         dateType: 0,
+    //       },
+    //     }, {
+    //       $sort: sortBy,
+    //     }, {
+    //       $limit: 1000,
+    //     },
+    //   ], {
+    //     allowDiskUse: true,
+    //   });
+    //   const reviews = await cursor.toArray();
+    //   return reviews;
+    // }
     }
   } finally {
     await mongoClient.close();
@@ -174,7 +155,8 @@ const postReview = async (review) => {
       await reviewsCollection.insertOne({
         product_id: review.product_id,
         rating: review.rating,
-        date: { $date: new Date().toISOString() },
+        date: new Date().toISOString(),
+        dateType: { $date: new Date().toISOString() },
         summary: review.summary,
         body: review.body,
         recommend: review.recommend,

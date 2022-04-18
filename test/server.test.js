@@ -2,32 +2,9 @@ const request = require('supertest');
 const { connectToDatabase } = require('../database/database');
 const { api, server } = require('../server/server');
 
-let dbURL;
-let dbName;
-let reviewsCollectionName;
-let productMetadataCollectionName;
-
-if (process.env.ENVIRONMENT === 'local-dev') {
-  dbURL = process.env.LOCAL_DEV_DB_URL;
-  dbName = process.env.LOCAL_DEV_DB_NAME;
-  reviewsCollectionName = process.env.LOCAL_DEV_REVIEWS_COLLECTION_NAME;
-  productMetadataCollectionName = process.env.LOCAL_DEV_PRODUCTMETADATA_COLLECTION_NAME;
-} else if (process.env.ENVIRONMENT === 'local-prod') {
-  dbURL = process.env.LOCAL_PROD_DB_URL;
-  dbName = process.env.LOCAL_PROD_DB_NAME;
-  reviewsCollectionName = process.env.LOCAL_PROD_REVIEWS_COLLECTION_NAME;
-  productMetadataCollectionName = process.env.LOCAL_PROD_PRODUCTMETADATA_COLLECTION_NAME;
-} else if (process.env.ENVIRONMENT === 'deployed-dev') {
-  dbURL = process.env.DEPLOYED_DEV_DB_URL;
-  dbName = process.env.DEPLOYED_DEV_DB_NAME;
-  reviewsCollectionName = process.env.DEPLOYED_DEV_REVIEWS_COLLECTION_NAME;
-  productMetadataCollectionName = process.env.DEPLOYED_DEV_PRODUCTMETADATA_COLLECTION_NAME;
-} else if (process.env.ENVIRONMENT === 'deployed-prod') {
-  dbURL = process.env.DEPLOYED_PROD_DB_URL;
-  dbName = process.env.DEPLOYED_PROD_DB_NAME;
-  reviewsCollectionName = process.env.DEPLOYED_PROD_REVIEWS_COLLECTION_NAME;
-  productMetadataCollectionName = process.env.DEPLOYED_PROD_PRODUCTMETADATA_COLLECTION_NAME;
-}
+const dbURL = process.env.DB_URL;
+const dbName = process.env.DB_NAME;
+const reviewsCollectionName = process.env.REVIEWS_COLLECTION_NAME;
 
 afterAll(async () => {
   await server.close();

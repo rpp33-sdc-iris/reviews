@@ -9,32 +9,10 @@ const { markReviewHelpful } = require('../database/dbhelpers');
 const { markReviewReported } = require('../database/dbhelpers');
 const { postReview } = require('../database/dbhelpers');
 
-let dbURL;
-let dbName;
-let reviewsCollectionName;
-let productMetadataCollectionName;
-
-if (process.env.ENVIRONMENT === 'local-dev') {
-  dbURL = process.env.LOCAL_DEV_DB_URL;
-  dbName = process.env.LOCAL_DEV_DB_NAME;
-  reviewsCollectionName = process.env.LOCAL_DEV_REVIEWS_COLLECTION_NAME;
-  productMetadataCollectionName = process.env.LOCAL_DEV_PRODUCTMETADATA_COLLECTION_NAME;
-} else if (process.env.ENVIRONMENT === 'local-prod') {
-  dbURL = process.env.LOCAL_PROD_DB_URL;
-  dbName = process.env.LOCAL_PROD_DB_NAME;
-  reviewsCollectionName = process.env.LOCAL_PROD_REVIEWS_COLLECTION_NAME;
-  productMetadataCollectionName = process.env.LOCAL_PROD_PRODUCTMETADATA_COLLECTION_NAME;
-} else if (process.env.ENVIRONMENT === 'deployed-dev') {
-  dbURL = process.env.DEPLOYED_DEV_DB_URL;
-  dbName = process.env.DEPLOYED_DEV_DB_NAME;
-  reviewsCollectionName = process.env.DEPLOYED_DEV_REVIEWS_COLLECTION_NAME;
-  productMetadataCollectionName = process.env.DEPLOYED_DEV_PRODUCTMETADATA_COLLECTION_NAME;
-} else if (process.env.ENVIRONMENT === 'deployed-prod') {
-  dbURL = process.env.DEPLOYED_PROD_DB_URL;
-  dbName = process.env.DEPLOYED_PROD_DB_NAME;
-  reviewsCollectionName = process.env.DEPLOYED_PROD_REVIEWS_COLLECTION_NAME;
-  productMetadataCollectionName = process.env.DEPLOYED_PROD_PRODUCTMETADATA_COLLECTION_NAME;
-}
+const dbURL = process.env.DB_URL;
+const dbName = process.env.DB_NAME;
+const reviewsCollectionName = process.env.REVIEWS_COLLECTION_NAME;
+// const productMetadataCollectionName = process.env.PRODUCTMETADATA_COLLECTION_NAME;
 
 describe('Database helper functions', () => {
   //
@@ -61,17 +39,16 @@ describe('Database helper functions', () => {
     });
   });
 
-  describe('getReviews()', () => {
+  describe.only('getReviews()', () => {
     //
-    it('returns reviews for a valid product_id', async () => {
-      const actual = await getReviews(2, 'relevant');
-      expect(actual.length).toBe(5);
+    it.only('returns reviews for a valid product_id', async () => {
+      const actual = await getReviews(1, 'relevant');
+      console.log(actual);
+      expect(actual.length).toBe(2);
     });
 
     it('does not return reviews for an invalid product_id', async () => {
       await expect(getReviews(0)).rejects.toThrow('Invalid product_id');
-      // const actual = await getReviews(0, 'relevant');
-      // expect(actual.length).toBe(0);
     });
   });
 
