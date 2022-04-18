@@ -45,35 +45,11 @@ const getReviews = async (productId, sort) => {
       throw new Error('Invalid product_id');
     } else {
       const findCursor = await reviewsCollection.find({ product_id: productId, reported: false });
-      const projectCursor = await findCursor.project({ reported: 0, reviewer_email: 0, dateType: 0 });
-      const sortCursor = await projectCursor.sort(sortBy);
+      const projCursor = await findCursor.project({ reported: 0, reviewer_email: 0, dateType: 0 });
+      const sortCursor = await projCursor.sort(sortBy);
       const limitCursor = await sortCursor.limit(1000);
       const reviews = await limitCursor.toArray();
       return reviews;
-    // *** Commented query code comparable to getreadtimes.js script
-    //   const cursor = await reviewsCollection.aggregate([
-    //     {
-    //       $match: {
-    //         product_id: productId,
-    //         reported: false,
-    //       },
-    //     }, {
-    //       $project: {
-    //         reported: 0,
-    //         reviewer_email: 0,
-    //         dateType: 0,
-    //       },
-    //     }, {
-    //       $sort: sortBy,
-    //     }, {
-    //       $limit: 1000,
-    //     },
-    //   ], {
-    //     allowDiskUse: true,
-    //   });
-    //   const reviews = await cursor.toArray();
-    //   return reviews;
-    // }
     }
   } finally {
     await mongoClient.close();
@@ -156,7 +132,7 @@ const postReview = async (review) => {
         product_id: review.product_id,
         rating: review.rating,
         date: new Date().toISOString(),
-        dateType: { $date: new Date().toISOString() },
+        dateType: new Date(Date.now()),
         summary: review.summary,
         body: review.body,
         recommend: review.recommend,
@@ -201,7 +177,6 @@ const postReview = async (review) => {
       }
       await productMetadataCollection.replaceOne({ product_id: review.product_id }, metadata);
     }
-    //
   } finally {
     mongoClient.close();
   }

@@ -12,7 +12,7 @@ const { postReview } = require('../database/dbhelpers');
 const dbURL = process.env.DB_URL;
 const dbName = process.env.DB_NAME;
 const reviewsCollectionName = process.env.REVIEWS_COLLECTION_NAME;
-// const productMetadataCollectionName = process.env.PRODUCTMETADATA_COLLECTION_NAME;
+const productMetadataCollectionName = process.env.PRODUCTMETADATA_COLLECTION_NAME;
 
 describe('Database helper functions', () => {
   //
@@ -39,11 +39,10 @@ describe('Database helper functions', () => {
     });
   });
 
-  describe.only('getReviews()', () => {
+  describe('getReviews()', () => {
     //
-    it.only('returns reviews for a valid product_id', async () => {
+    it('returns reviews for a valid product_id', async () => {
       const actual = await getReviews(1, 'relevant');
-      console.log(actual);
       expect(actual.length).toBe(2);
     });
 
@@ -85,7 +84,7 @@ describe('Database helper functions', () => {
       await mongoClient.close();
     });
   });
-  /*
+
   describe('postReview', () => {
     //
     it('adds a review to the reviews collection', async () => {
@@ -106,11 +105,51 @@ describe('Database helper functions', () => {
           1: 5, 2: 5, 3: 5, 4: 5,
         },
       };
-      await postReview(db, 'reviews_test', 'product_metadata_test', review);
-      const actual = await reviewsTestCol.countDocuments();
+      await postReview(review);
+
+      const mongoClient = await connectToDatabase(dbURL);
+      const db = mongoClient.db(dbName);
+      const reviewsCollection = db.collection(reviewsCollectionName);
+      const productMetadataCollection = db.collection(productMetadataCollectionName);
+
+      const actual = await reviewsCollection.countDocuments();
       expect(actual).toBe(5774953);
-      await reviewsTestCol.deleteOne({ review_id: 5774953 });
+      await reviewsCollection.deleteOne({ review_id: 5774953 });
+      await mongoClient.close();
+
+      const metadata = {
+        ratings: {
+          1: '0',
+          2: '0',
+          3: '0',
+          4: '1',
+          5: '1',
+        },
+        recommended: {
+          true: '1',
+          false: '1',
+        },
+        characteristics: {
+          Fit: {
+            id: 1,
+            value: '4',
+          },
+          Length: {
+            id: 2,
+            value: '3.5',
+          },
+          Comfort: {
+            id: 3,
+            value: '5',
+          },
+          Quality: {
+            id: 4,
+            value: '4',
+          },
+        },
+      };
+
+      await productMetadataCollection.replaceOne({ product_id: review.product_id }, metadata);
     });
   });
-  */
 });
