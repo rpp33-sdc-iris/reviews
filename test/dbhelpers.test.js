@@ -85,13 +85,12 @@ describe('Database helper functions', () => {
     });
   });
 
-  describe('postReview', () => {
+  describe.only('postReview', () => {
     //
-    it('adds a review to the reviews collection', async () => {
+    it.only('adds a review to the reviews collection', async () => {
       const review = {
         product_id: 1,
         rating: 5,
-        date: new Date().toISOString(),
         summary: 'test summary',
         body: 'test body',
         recommend: true,

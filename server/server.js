@@ -11,12 +11,16 @@ const { postReview } = require('../database/dbhelpers');
 
 const api = express();
 api.use(express.urlencoded());
+api.use(express.json());
+
 const port = 8080;
+
+const productIdOffset = process.env.PRODUCTID_OFFSET;
 
 api.get('/reviews', (req, res) => {
   // product_id, sort, page, and count values NOT trusted
   let err;
-  const productId = Number(req.query.product_id) - 64619;
+  const productId = Number(req.query.product_id) - productIdOffset;
   const { sort } = req.query; // page always equal to 1 & count always equal to 1000
   const page = Number(req.query.page);
   const count = Number(req.query.count);
@@ -56,7 +60,7 @@ api.get('/reviews', (req, res) => {
         res.status(500).send();
       } else {
         res.status(200).json({
-          product_id: productId + 64619,
+          product_id: productId + productIdOffset,
           page,
           count,
           results: reviews,
@@ -68,7 +72,7 @@ api.get('/reviews', (req, res) => {
 api.get('/reviews/meta/', (req, res) => {
   // product_id value NOT trusted
   let err;
-  const productId = Number(req.query.product_id) - 64619;
+  const productId = Number(req.query.product_id) - productIdOffset;
 
   if (productId === undefined || Number.isNaN(productId)) {
     res.status(400).send();
@@ -91,7 +95,7 @@ api.get('/reviews/meta/', (req, res) => {
         res.status(500).send();
       } else {
         const modifiedProductMetadata = productMetadata;
-        modifiedProductMetadata.product_id += 64619;
+        modifiedProductMetadata.product_id += productIdOffset;
         res.status(200).json(modifiedProductMetadata);
       }
     });
@@ -100,7 +104,7 @@ api.get('/reviews/meta/', (req, res) => {
 
 api.post('/reviews/', (req, res) => {
   let err;
-  req.body.product_id -= 64619;
+  req.body.product_id -= productIdOffset;
   // req.body values NOT trusted
   postReview(req.body)
     .catch((error) => {

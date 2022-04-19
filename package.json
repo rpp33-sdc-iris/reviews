@@ -10,7 +10,8 @@
   "scripts": {
     "test": "jest test",
     "test-coverage": "jest test --coverage",
-    "start-server": "nodemon ./server/server.js",
+    "start-server": "node ./server/server.js",
+    "start-dev-server": "nodemon ./server/server.js",
     "getdbreadtimes": "node ./database/getdbreadtimes"
   },
   "devDependencies": {
@@ -19,6 +20,7 @@
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-plugin-import": "^2.25.4",
     "jest": "^27.5.1",
+    "k6": "^0.0.0",
     "nodemon": "^2.0.15",
     "supertest": "^6.2.2"
   },
