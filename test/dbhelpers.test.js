@@ -42,12 +42,13 @@ describe('Database helper functions', () => {
   describe('getReviews()', () => {
     //
     it('returns reviews for a valid product_id', async () => {
-      const actual = await getReviews(1, 'relevant');
-      expect(actual.length).toBe(2);
+      const actual = await getReviews(2, 'relevant');
+      expect(actual.length).toBe(5);
     });
 
     it('does not return reviews for an invalid product_id', async () => {
-      await expect(getReviews(0)).rejects.toThrow('Invalid product_id');
+      const actual = await getReviews(0, 'relevant');
+      await expect(actual.length).toBe(0);
     });
   });
 
@@ -85,7 +86,7 @@ describe('Database helper functions', () => {
     });
   });
 
-  describe.only('postReview', () => {
+  describe('postReview', () => {
     //
     it.only('adds a review to the reviews collection', async () => {
       const review = {

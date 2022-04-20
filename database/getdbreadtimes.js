@@ -43,11 +43,11 @@ const getDBReadTimes = async () => {
   const limitStats = await limitCursor.explain('executionStats');
   timeToReadReviews += limitStats.executionStats.executionTimeMillis;
 
-  console.log(`Time to read product reviews for product_id ${productId}: ${timeToReadReviews} ms`);
+  console.log(`Time to read product reviews for product_id ${productId}, sorted by relevance: ${timeToReadReviews} ms`);
 
   const reviews = await limitCursor.toArray();
   console.log('Metadata: ', productMetadata);
-  console.log('Reviews: ', reviews);
+  console.log('Reviews: ', reviews.length);
 
   await mongoClient.close();
 };

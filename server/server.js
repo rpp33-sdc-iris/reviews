@@ -21,48 +21,21 @@ api.get('/reviews', (req, res) => {
   // product_id, sort, page, and count values NOT trusted
   let err;
   const productId = Number(req.query.product_id) - productIdOffset;
-  const { sort } = req.query; // page always equal to 1 & count always equal to 1000
-  const page = Number(req.query.page);
-  const count = Number(req.query.count);
-
-  const sortOptions = ['relevant', 'newest', 'helpfulness'];
-  // Check query parameters
-  if (productId === undefined || Number.isNaN(productId)) {
-    res.status(400).send();
-    return;
-  }
-  if (!sortOptions.includes(sort)) {
-    res.status(400).send();
-    return;
-  }
-  if (page === undefined || Number.isNaN(page)) {
-    res.status(400).send();
-    return;
-  }
-  if (count === undefined || Number.isNaN(count)) {
-    res.status(400).send();
-    return;
-  }
-
+  const { sort } = req.query;
+  // page always equal to 1 & count always equal to 1000
   getReviews(productId, sort)
     .catch((error) => {
       console.log('Error retrieving reviews:', error);
-      if (error.message === 'Invalid product_id') {
-        err = 404;
-      } else {
-        err = 500;
-      }
+      err = 500;
     })
     .then((reviews) => {
-      if (err === 404) {
-        res.status(404).send();
-      } else if (err === 500) {
+      if (err === 500) {
         res.status(500).send();
       } else {
         res.status(200).json({
           product_id: productId + productIdOffset,
-          page,
-          count,
+          page: 1,
+          count: 1000,
           results: reviews,
         });
       }
@@ -73,25 +46,13 @@ api.get('/reviews/meta/', (req, res) => {
   // product_id value NOT trusted
   let err;
   const productId = Number(req.query.product_id) - productIdOffset;
-
-  if (productId === undefined || Number.isNaN(productId)) {
-    res.status(400).send();
-    return;
-  }
-  //
   getProductMetadata(productId)
     .catch((error) => {
       console.log('Error retrieving product metadata:', error);
-      if (error.message === 'Invalid product_id') {
-        err = 404;
-      } else {
-        err = 500;
-      }
+      err = 500;
     })
     .then((productMetadata) => {
-      if (err === 404) {
-        res.status(404).send();
-      } else if (err === 500) {
+      if (err === 500) {
         res.status(500).send();
       } else {
         const modifiedProductMetadata = productMetadata;
@@ -103,21 +64,17 @@ api.get('/reviews/meta/', (req, res) => {
 });
 
 api.post('/reviews/', (req, res) => {
+  // req.body values NOT trusted
   let err;
   req.body.product_id -= productIdOffset;
-  // req.body values NOT trusted
   postReview(req.body)
     .catch((error) => {
       if (error.message === 'Invalid product_id') {
-        err = 404;
-      } else {
         err = 500;
       }
     })
     .then(() => {
-      if (err === 404) {
-        res.status(404).send();
-      } else if (err === 500) {
+      if (err === 500) {
         res.status(500).send();
       } else {
         res.status(201).send();
@@ -126,25 +83,16 @@ api.post('/reviews/', (req, res) => {
 });
 
 api.put('/reviews/:review_id/helpful', (req, res) => {
+  // review_id value NOT trusted
   let err;
   const reviewId = Number(req.params.review_id);
-  if (Number.isNaN(reviewId)) {
-    res.status(400).send();
-    return;
-  }
   markReviewHelpful(reviewId)
     .catch((error) => {
       console.log('Error marking review helpful:', error);
-      if (error.message === 'Review does not exist') {
-        err = 404;
-      } else {
-        err = 500;
-      }
+      err = 500;
     })
     .then(() => {
-      if (err === 404) {
-        res.status(404).send();
-      } else if (err === 500) {
+      if (err === 500) {
         res.status(500).send();
       } else {
         res.status(201).send();
@@ -155,23 +103,13 @@ api.put('/reviews/:review_id/helpful', (req, res) => {
 api.put('/reviews/:review_id/report', (req, res) => {
   let err;
   const reviewId = Number(req.params.review_id);
-  if (Number.isNaN(reviewId)) {
-    res.status(400).send();
-    return;
-  }
   markReviewReported(reviewId)
     .catch((error) => {
       console.log('Error marking review reported:', error);
-      if (error.message === 'Review does not exist') {
-        err = 404;
-      } else {
-        err = 500;
-      }
+      err = 500;
     })
     .then(() => {
-      if (err === 404) {
-        res.status(404).send();
-      } else if (err === 500) {
+      if (err === 500) {
         res.status(500).send();
       } else {
         res.status(201).send();
