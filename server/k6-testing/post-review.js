@@ -2,14 +2,21 @@ import http from 'k6/http';
 import { sleep } from 'k6';
 
 export const options = {
-  vus: 1,
-  duration: '30s',
+  scenarios: {
+    constant_request_rate: {
+      executor: 'constant-arrival-rate',
+      rate: 50,
+      timeUnit: '1s',
+      duration: '60s',
+      preAllocatedVUs: 60,
+      maxVUs: 600,
+    },
+  },
 };
 
 export default function () {
-  const randomProductId = Math.floor(Math.random() * 1000011);
   const payload = JSON.stringify({
-    product_id: randomProductId,
+    product_id: 1,
     rating: 5,
     summary: 'test summary',
     body: 'test body',
@@ -25,6 +32,6 @@ export default function () {
     },
   });
 
-  http.post('http://localhost:8080/reviews/', payload);
+  http.post('http://localhost:8080/reviews/', payload, { headers: { 'Content-Type': 'application/json' } });
   sleep(1);
 }

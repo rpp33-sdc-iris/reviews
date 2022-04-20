@@ -25,7 +25,7 @@ api.get('/reviews', (req, res) => {
   // page always equal to 1 & count always equal to 1000
   getReviews(productId, sort)
     .catch((error) => {
-      console.log('Error retrieving reviews:', error);
+      console.log('Error retrieving reviews');
       err = 500;
     })
     .then((reviews) => {
@@ -48,7 +48,7 @@ api.get('/reviews/meta/', (req, res) => {
   const productId = Number(req.query.product_id) - productIdOffset;
   getProductMetadata(productId)
     .catch((error) => {
-      console.log('Error retrieving product metadata:', error);
+      console.log('Error retrieving product metadata');
       err = 500;
     })
     .then((productMetadata) => {
@@ -69,9 +69,8 @@ api.post('/reviews/', (req, res) => {
   req.body.product_id -= productIdOffset;
   postReview(req.body)
     .catch((error) => {
-      if (error.message === 'Invalid product_id') {
-        err = 500;
-      }
+      console.log('Error posting new review: ', error);
+      err = 500;
     })
     .then(() => {
       if (err === 500) {
@@ -88,7 +87,7 @@ api.put('/reviews/:review_id/helpful', (req, res) => {
   const reviewId = Number(req.params.review_id);
   markReviewHelpful(reviewId)
     .catch((error) => {
-      console.log('Error marking review helpful:', error);
+      console.log('Error marking review helpful');
       err = 500;
     })
     .then(() => {
@@ -105,7 +104,7 @@ api.put('/reviews/:review_id/report', (req, res) => {
   const reviewId = Number(req.params.review_id);
   markReviewReported(reviewId)
     .catch((error) => {
-      console.log('Error marking review reported:', error);
+      console.log('Error marking review reported');
       err = 500;
     })
     .then(() => {

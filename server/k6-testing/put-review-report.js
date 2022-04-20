@@ -2,8 +2,16 @@ import http from 'k6/http';
 import { sleep } from 'k6';
 
 export const options = {
-  vus: 1000,
-  duration: '30s',
+  scenarios: {
+    constant_request_rate: {
+      executor: 'constant-arrival-rate',
+      rate: 230,
+      timeUnit: '1s',
+      duration: '60s',
+      preAllocatedVUs: 230,
+      maxVUs: 2300,
+    },
+  },
 };
 
 export default function () {

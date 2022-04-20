@@ -40,11 +40,7 @@ const getProductMetadata = async (productId) => {
     const db = mongoClient.db(dbName);
     const collection = db.collection(productMetadataCollectionName);
     const productMetadata = await collection.findOne({ product_id: productId });
-    if (productMetadata === null) {
-      throw new Error('Invalid product_id');
-    } else {
-      return productMetadata;
-    }
+    return productMetadata;
   } finally {
     await mongoClient.close();
   }
@@ -106,7 +102,6 @@ const markReviewReported = async (reviewId) => {
 };
 
 const postReview = async (review) => {
-  console.log(nId);
   let mongoClient;
   const newReview = review;
   try {
@@ -129,6 +124,12 @@ const postReview = async (review) => {
         }
       }
     }
+    //
+    if (nId === undefined) {
+      const currentId = await reviewsCollection.countDocuments();
+      nId = currentId + 1;
+    }
+    //
     await reviewsCollection.insertOne({
       product_id: review.product_id,
       rating: review.rating,

@@ -14,6 +14,8 @@ const dbName = process.env.DB_NAME;
 const reviewsCollectionName = process.env.REVIEWS_COLLECTION_NAME;
 const productMetadataCollectionName = process.env.PRODUCTMETADATA_COLLECTION_NAME;
 
+jest.setTimeout(20000);
+
 describe('Database helper functions', () => {
   //
   describe('getProductMetadata()', () => {
@@ -88,7 +90,7 @@ describe('Database helper functions', () => {
 
   describe('postReview', () => {
     //
-    it.only('adds a review to the reviews collection', async () => {
+    it('adds a review to the reviews collection', async () => {
       const review = {
         product_id: 1,
         rating: 5,
@@ -115,8 +117,6 @@ describe('Database helper functions', () => {
       const actual = await reviewsCollection.countDocuments();
       expect(actual).toBe(5774953);
       await reviewsCollection.deleteOne({ review_id: 5774953 });
-      await mongoClient.close();
-
       const metadata = {
         ratings: {
           1: '0',
@@ -150,6 +150,7 @@ describe('Database helper functions', () => {
       };
 
       await productMetadataCollection.replaceOne({ product_id: review.product_id }, metadata);
+      await mongoClient.close();
     });
   });
 });
