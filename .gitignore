@@ -113,3 +113,7 @@ config.js
 database/original-data/*.csv
 
 globalConfig.json
+
+# PEM keys
+
+/pem_keys

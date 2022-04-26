@@ -1,5 +1,6 @@
 const { config } = require('dotenv');
 const express = require('express');
+const path = require('path');
 
 config();
 
@@ -16,6 +17,23 @@ api.use(express.json());
 const port = 8080;
 
 const productIdOffset = process.env.PRODUCTID_OFFSET;
+const loaderIOTesting = process.env.LOADERIO_TESTING;
+
+if (loaderIOTesting) {
+  api.use(express.static('/loaderio'));
+
+  api.get('/loaderio-0cfe93f953c4641ac7b1ac282291d46e', (req, res) => {
+    res.sendFile(path.join(__dirname, 'loaderio-0cfe93f953c4641ac7b1ac282291d46e.txt'));
+  });
+
+  api.get('/loaderio-0cfe93f953c4641ac7b1ac282291d46e.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'loaderio-0cfe93f953c4641ac7b1ac282291d46e.txt'));
+  });
+
+  api.get('/loaderio-0cfe93f953c4641ac7b1ac282291d46e.txt', (req, res) => {
+    res.sendFile(path.join(__dirname, 'loaderio-0cfe93f953c4641ac7b1ac282291d46e.txt'));
+  });
+}
 
 api.get('/reviews', (req, res) => {
   // product_id, sort, page, and count values NOT trusted
