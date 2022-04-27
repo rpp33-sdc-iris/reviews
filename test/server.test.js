@@ -1,5 +1,5 @@
 const request = require('supertest');
-const { connectToDatabase } = require('../database/database');
+const { connectToDatabase } = require('../database/connect');
 const { api, server } = require('../server/server');
 
 const dbURL = process.env.DB_URL;

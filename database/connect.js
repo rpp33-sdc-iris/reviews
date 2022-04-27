@@ -1,7 +1,6 @@
 const { MongoClient } = require('mongodb');
 
 const connectToDatabase = async (url) => {
-  //
   let mongoClient;
 
   try {

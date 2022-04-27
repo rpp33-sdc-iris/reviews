@@ -4,20 +4,21 @@ const path = require('path');
 
 config();
 
-const { getProductMetadata } = require('../database/dbhelpers');
-const { getReviews } = require('../database/dbhelpers');
-const { markReviewHelpful } = require('../database/dbhelpers');
-const { markReviewReported } = require('../database/dbhelpers');
-const { postReview } = require('../database/dbhelpers');
+const { countReviews } = require('../database/helpers');
+const { getProductMetadata } = require('../database/helpers');
+const { getReviews } = require('../database/helpers');
+const { markReviewHelpful } = require('../database/helpers');
+const { markReviewReported } = require('../database/helpers');
+const { postReview } = require('../database/helpers');
+
+const productIdOffset = process.env.PRODUCTID_OFFSET;
+const loaderIOTesting = process.env.LOADERIO_TESTING;
+const port = 8080;
+let reviewCount;
 
 const api = express();
 api.use(express.urlencoded());
 api.use(express.json());
-
-const port = 8080;
-
-const productIdOffset = process.env.PRODUCTID_OFFSET;
-const loaderIOTesting = process.env.LOADERIO_TESTING;
 
 if (loaderIOTesting) {
   api.use(express.static('/loaderio'));
@@ -42,7 +43,7 @@ api.get('/reviews', (req, res) => {
   const { sort } = req.query;
   // page always equal to 1 & count always equal to 1000
   getReviews(productId, sort)
-    .catch((error) => {
+    .catch(() => {
       console.log('Error retrieving reviews');
       err = 500;
     })
@@ -65,7 +66,7 @@ api.get('/reviews/meta/', (req, res) => {
   let err;
   const productId = Number(req.query.product_id) - productIdOffset;
   getProductMetadata(productId)
-    .catch((error) => {
+    .catch(() => {
       console.log('Error retrieving product metadata');
       err = 500;
     })
@@ -84,8 +85,9 @@ api.get('/reviews/meta/', (req, res) => {
 api.post('/reviews/', (req, res) => {
   // req.body values NOT trusted
   let err;
+  reviewCount += 1;
   req.body.product_id -= productIdOffset;
-  postReview(req.body)
+  postReview(req.body, reviewCount)
     .catch((error) => {
       console.log('Error posting new review: ', error);
       err = 500;
@@ -104,7 +106,7 @@ api.put('/reviews/:review_id/helpful', (req, res) => {
   let err;
   const reviewId = Number(req.params.review_id);
   markReviewHelpful(reviewId)
-    .catch((error) => {
+    .catch(() => {
       console.log('Error marking review helpful');
       err = 500;
     })
@@ -121,7 +123,7 @@ api.put('/reviews/:review_id/report', (req, res) => {
   let err;
   const reviewId = Number(req.params.review_id);
   markReviewReported(reviewId)
-    .catch((error) => {
+    .catch(() => {
       console.log('Error marking review reported');
       err = 500;
     })
@@ -134,9 +136,18 @@ api.put('/reviews/:review_id/report', (req, res) => {
     });
 });
 
-const server = api.listen(port, () => {
-  console.log(`Listening on port ${port}`);
-});
+const startServer = async () => {
+  try {
+    reviewCount = await countReviews();
+    api.listen(port, () => {
+      console.log(`There are ${reviewCount} reviews. Listening for requests on port ${port}`);
+    });
+  } catch (error) {
+    console.log('Could not count reviews');
+    process.exit();
+  }
+};
+
+startServer();
 
 module.exports.api = api;
-module.exports.server = server;

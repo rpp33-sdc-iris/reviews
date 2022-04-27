@@ -2,12 +2,12 @@ const { config } = require('dotenv');
 
 config();
 
-const { connectToDatabase } = require('../database/database');
-const { getProductMetadata } = require('../database/dbhelpers');
-const { getReviews } = require('../database/dbhelpers');
-const { markReviewHelpful } = require('../database/dbhelpers');
-const { markReviewReported } = require('../database/dbhelpers');
-const { postReview } = require('../database/dbhelpers');
+const { connectToDatabase } = require('../database/connect');
+const { getProductMetadata } = require('../database/helpers');
+const { getReviews } = require('../database/helpers');
+const { markReviewHelpful } = require('../database/helpers');
+const { markReviewReported } = require('../database/helpers');
+const { postReview } = require('../database/helpers');
 
 const dbURL = process.env.DB_URL;
 const dbName = process.env.DB_NAME;

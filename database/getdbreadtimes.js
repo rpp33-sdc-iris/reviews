@@ -1,5 +1,5 @@
 const { config } = require('dotenv');
-const { connectToDatabase } = require('./database');
+const { connectToDatabase } = require('./connect');
 
 config();
 

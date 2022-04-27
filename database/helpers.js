@@ -1,36 +1,22 @@
-const { connectToDatabase } = require('./database');
+const { connectToDatabase } = require('./connect');
 
 const dbURL = process.env.DB_URL;
 const dbName = process.env.DB_NAME;
 const reviewsCollectionName = process.env.REVIEWS_COLLECTION_NAME;
 const productMetadataCollectionName = process.env.PRODUCTMETADATA_COLLECTION_NAME;
 
-let nId; // nextReviewId
-
-const getnId = async () => {
+const countReviews = async () => {
   let mongoClient;
   try {
     mongoClient = await connectToDatabase(dbURL);
     const db = mongoClient.db(dbName);
     const reviewsCollection = db.collection(reviewsCollectionName);
-    const lastReviewId = await reviewsCollection.countDocuments();
-    console.log(lastReviewId);
-    nId = lastReviewId + 1;
+    const count = await reviewsCollection.countDocuments();
+    return count;
   } finally {
     await mongoClient.close();
   }
 };
-
-const runGetNId = async () => {
-  try {
-    await getnId();
-  } catch (error) {
-    console.log('Error determing last reviewId', error);
-    process.exit();
-  }
-};
-
-runGetNId();
 
 const getProductMetadata = async (productId) => {
   let mongoClient;
@@ -48,6 +34,7 @@ const getProductMetadata = async (productId) => {
 
 const getReviews = async (productId, sort) => {
   let mongoClient;
+  //
   let sortBy;
   if (sort === 'relevant') {
     sortBy = { helpfulness: -1, dateType: -1 };
@@ -56,6 +43,7 @@ const getReviews = async (productId, sort) => {
   } else {
     sortBy = { helpfulness: -1 };
   }
+  //
   try {
     mongoClient = await connectToDatabase(dbURL);
     const db = mongoClient.db(dbName);
@@ -73,6 +61,7 @@ const getReviews = async (productId, sort) => {
 
 const markReviewHelpful = async (reviewId) => {
   let mongoClient;
+
   try {
     mongoClient = await connectToDatabase(dbURL);
     const db = mongoClient.db(dbName);
@@ -88,6 +77,7 @@ const markReviewHelpful = async (reviewId) => {
 
 const markReviewReported = async (reviewId) => {
   let mongoClient;
+
   try {
     mongoClient = await connectToDatabase(dbURL);
     const db = mongoClient.db(dbName);
@@ -101,9 +91,10 @@ const markReviewReported = async (reviewId) => {
   }
 };
 
-const postReview = async (review) => {
-  let mongoClient;
+const postReview = async (review, nextReviewId) => {
   const newReview = review;
+  let mongoClient;
+
   try {
     mongoClient = await connectToDatabase(dbURL);
     const db = mongoClient.db(dbName);
@@ -111,70 +102,53 @@ const postReview = async (review) => {
     const productMetadataCollection = db.collection(productMetadataCollectionName);
     //
     const metadata = await getProductMetadata(review.product_id);
-    const metaCharacteristicKeys = Object.keys(metadata.characteristics);
-    const metaCharacteristicValues = Object.values(metadata.characteristics);
-    const reviewCharacteristicKeys = Object.keys(newReview.characteristics);
-    const reviewCharValues = Object.values(newReview.characteristics);
-    //
-    for (let i = 0; i < metaCharacteristicKeys.length; i += 1) {
-      for (let j = 0; j < reviewCharacteristicKeys.length; j += 1) {
-        if (Number(reviewCharacteristicKeys[j]) === metaCharacteristicValues[i].id) {
-          newReview.characteristics[metaCharacteristicKeys[i]] = { value: reviewCharValues[j] };
-          delete newReview.characteristics[reviewCharacteristicKeys[j]];
+    const metadataCharacteristics = Object.keys(metadata.characteristics);
+    const metadataCharacteristicRatings = Object.values(metadata.characteristics);
+    const reviewCharacteristics = Object.keys(newReview.characteristics);
+    const reviewCharRatings = Object.values(newReview.characteristics);
+    // Replace characteristic id's with characteristics
+    for (let i = 0; i < metadataCharacteristics.length; i += 1) {
+      for (let j = 0; j < reviewCharacteristics.length; j += 1) {
+        if (Number(reviewCharacteristics[j]) === metadataCharacteristicRatings[i].id) {
+          newReview.characteristics[metadataCharacteristics[i]] = {
+            id: metadataCharacteristicRatings[i].id,
+            value: reviewCharRatings[j],
+          };
+          delete newReview.characteristics[reviewCharacteristics[j]];
         }
       }
     }
     //
-    if (nId === undefined) {
-      const currentId = await reviewsCollection.countDocuments();
-      nId = currentId + 1;
-    }
-    //
     await reviewsCollection.insertOne({
-      product_id: review.product_id,
-      rating: review.rating,
+      product_id: newReview.product_id,
+      rating: newReview.rating,
       date: new Date().toISOString(),
       dateType: new Date(Date.now()),
-      summary: review.summary,
-      body: review.body,
-      recommend: review.recommend,
+      summary: newReview.summary,
+      body: newReview.body,
+      recommend: newReview.recommend,
       reported: false,
-      reviewer_name: review.name,
-      reviewer_email: review.email,
+      reviewer_name: newReview.name,
+      reviewer_email: newReview.email,
       response: null,
       helpfulness: 0,
-      photos: review.photos.map((uri) => ({ url: uri })),
-      review_id: nId,
-      characteristics: review.characteristics,
+      photos: newReview.photos.map((uri) => ({ url: uri })),
+      review_id: nextReviewId,
+      characteristics: newReview.characteristics,
     });
-    nId += 1;
-    delete metadata._id;
-    //
-    if (review.rating === 1) {
-      metadata.ratings['1'] = (Number(metadata.ratings['1']) + 1).toString();
-    } else if (review.rating === 2) {
-      metadata.ratings['2'] = (Number(metadata.ratings['2']) + 1).toString();
-    } else if (review.rating === 3) {
-      metadata.ratings['3'] = (Number(metadata.ratings['3']) + 1).toString();
-    } else if (review.rating === 4) {
-      metadata.ratings['4'] = (Number(metadata.ratings['4']) + 1).toString();
-    } else {
-      metadata.ratings['5'] = (Number(metadata.ratings['5']) + 1).toString();
-    }
-    //
-    if (review.recommend) {
-      metadata.recommended.true = (Number(metadata.recommended.true) + 1).toString();
-    } else {
-      metadata.recommended.false = (Number(metadata.recommended.false) + 1).toString();
-    }
-    //
-    const rC = review.characteristics;
-    const mO = metadata.characteristics;
-    const mK = Object.keys(mO);
-    const metaChars = Object.values(mO);
-    for (let i = 0; i < mK.length; i += 1) {
-      mO[mK[i]].value = ((Number(metaChars[i].value) * (nId - 1)) + rC[mK[i]].value) / nId;
-      mO[mK[i]].value = mO[mK[i]].value.toString();
+    // Update metadata rating count and recommended count
+    const ratingString = review.rating.toString();
+    metadata.ratings[ratingString] = (Number(metadata.ratings[ratingString]) + 1).toString();
+    const rec = review.recommend;
+    metadata.recommended[rec] = (Number(metadata.recommended[rec]) + 1).toString();
+    // Update average characteristic ratings
+    const rChars = review.characteristics; // rChars == reviewCharacteristics
+    const mChars = metadata.characteristics; // mChars == metadataCharacteristics
+    const mCA = Object.keys(mChars); // mCA = metadataCharacteristicsArray
+    const mCRats = Object.values(mChars); // mCRats = metadataCharacteristicRatings
+    for (let i = 0; i < mCA.length; i += 1) {
+      mChars[mCA[i]].value = ((Number(mCRats[i].value) * (nId - 1)) + rChars[mCA[i]].value) / nId;
+      mChars[mCA[i]].value = mChars[mCA[i]].value.toString();
     }
     await productMetadataCollection.replaceOne({ product_id: review.product_id }, metadata);
   } finally {
@@ -182,6 +156,7 @@ const postReview = async (review) => {
   }
 };
 
+module.exports.countReviews = countReviews;
 module.exports.getProductMetadata = getProductMetadata;
 module.exports.getReviews = getReviews;
 module.exports.markReviewHelpful = markReviewHelpful;
