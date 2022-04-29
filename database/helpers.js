@@ -91,7 +91,7 @@ const markReviewReported = async (reviewId) => {
   }
 };
 
-const postReview = async (review, nextReviewId) => {
+const postReview = async (review, nRId) => { // nRId == nextReviewId
   const newReview = review;
   let mongoClient;
 
@@ -133,7 +133,7 @@ const postReview = async (review, nextReviewId) => {
       response: null,
       helpfulness: 0,
       photos: newReview.photos.map((uri) => ({ url: uri })),
-      review_id: nextReviewId,
+      review_id: nRId,
       characteristics: newReview.characteristics,
     });
     // Update metadata rating count and recommended count
@@ -147,7 +147,7 @@ const postReview = async (review, nextReviewId) => {
     const mCA = Object.keys(mChars); // mCA = metadataCharacteristicsArray
     const mCRats = Object.values(mChars); // mCRats = metadataCharacteristicRatings
     for (let i = 0; i < mCA.length; i += 1) {
-      mChars[mCA[i]].value = ((Number(mCRats[i].value) * (nId - 1)) + rChars[mCA[i]].value) / nId;
+      mChars[mCA[i]].value = ((Number(mCRats[i].value) * (nRId - 1)) + rChars[mCA[i]].value) / nRId;
       mChars[mCA[i]].value = mChars[mCA[i]].value.toString();
     }
     await productMetadataCollection.replaceOne({ product_id: review.product_id }, metadata);
