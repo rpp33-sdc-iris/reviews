@@ -14,9 +14,9 @@ const dbName = process.env.DB_NAME;
 const reviewsCollectionName = process.env.REVIEWS_COLLECTION_NAME;
 const productMetadataCollectionName = process.env.PRODUCTMETADATA_COLLECTION_NAME;
 
-jest.setTimeout(20000);
+jest.setTimeout(15000);
 
-describe('Database helper functions', () => {
+describe.only('DB helper functions', () => {
   //
   describe('getProductMetadata()', () => {
     //
@@ -37,10 +37,11 @@ describe('Database helper functions', () => {
     });
 
     it('returns null for an invalid product_id', async () => {
-      await expect(getProductMetadata(0)).rejects.toThrow('Invalid product_id');
+      const actual = await getProductMetadata(0);
+      await expect(actual).toBe(null);
     });
   });
-
+  //
   describe('getReviews()', () => {
     //
     it('returns reviews for a valid product_id', async () => {
@@ -53,7 +54,7 @@ describe('Database helper functions', () => {
       await expect(actual.length).toBe(0);
     });
   });
-
+  //
   describe('markReviewHelpful()', () => {
     //
     it('increases a review\'s helpfulness count', async () => {
@@ -70,7 +71,7 @@ describe('Database helper functions', () => {
       await mongoClient.close();
     });
   });
-
+  //
   describe('markReviewReported()', () => {
     //
     it('sets a review\'s reported property to true', async () => {
@@ -87,10 +88,18 @@ describe('Database helper functions', () => {
       await mongoClient.close();
     });
   });
-
+  //
   describe('postReview', () => {
     //
-    it('adds a review to the reviews collection', async () => {
+    it('adds a review to the reviews collection, and updates the metadata for the product', async () => {
+      const mongoClient = await connectToDatabase(dbURL);
+      const db = mongoClient.db(dbName);
+      const reviewsCollection = db.collection(reviewsCollectionName);
+      const productMetadataCollection = db.collection(productMetadataCollectionName);
+      //
+      const reviewsCount = await reviewsCollection.countDocuments();
+      const metadata = await getProductMetadata(1);
+      //
       const review = {
         product_id: 1,
         rating: 5,
@@ -107,49 +116,16 @@ describe('Database helper functions', () => {
           1: 5, 2: 5, 3: 5, 4: 5,
         },
       };
-      await postReview(review);
-
-      const mongoClient = await connectToDatabase(dbURL);
-      const db = mongoClient.db(dbName);
-      const reviewsCollection = db.collection(reviewsCollectionName);
-      const productMetadataCollection = db.collection(productMetadataCollectionName);
-
-      const actual = await reviewsCollection.countDocuments();
-      expect(actual).toBe(5774953);
-      await reviewsCollection.deleteOne({ review_id: 5774953 });
-      const metadata = {
-        ratings: {
-          1: '0',
-          2: '0',
-          3: '0',
-          4: '1',
-          5: '1',
-        },
-        recommended: {
-          true: '1',
-          false: '1',
-        },
-        characteristics: {
-          Fit: {
-            id: 1,
-            value: '4',
-          },
-          Length: {
-            id: 2,
-            value: '3.5',
-          },
-          Comfort: {
-            id: 3,
-            value: '5',
-          },
-          Quality: {
-            id: 4,
-            value: '4',
-          },
-        },
-      };
-
-      await productMetadataCollection.replaceOne({ product_id: review.product_id }, metadata);
+      await postReview(review, reviewsCount + 1);
+      //
+      const newReviewsCount = await reviewsCollection.countDocuments();
+      const updatedMetadata = await getProductMetadata(1);
+      expect(newReviewsCount).toBe(reviewsCount + 1);
+      expect(updatedMetadata).not.toStrictEqual(metadata);
+      //
+      await reviewsCollection.deleteOne({ review_id: reviewsCount + 1 });
+      delete metadata._id;
+      await productMetadataCollection.replaceOne({ product_id: 1 }, metadata);
       await mongoClient.close();
     });
   });
