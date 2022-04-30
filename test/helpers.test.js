@@ -16,7 +16,7 @@ const productMetadataCollectionName = process.env.PRODUCTMETADATA_COLLECTION_NAM
 
 jest.setTimeout(15000);
 
-describe.only('DB helper functions', () => {
+describe('DB helper functions', () => {
   //
   describe('getProductMetadata()', () => {
     //

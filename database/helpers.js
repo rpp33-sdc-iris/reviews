@@ -1,4 +1,7 @@
+const { config } = require('dotenv');
 const { connectToDatabase } = require('./connect');
+
+config();
 
 const dbURL = process.env.DB_URL;
 const dbName = process.env.DB_NAME;
@@ -36,12 +39,12 @@ const getReviews = async (productId, sort) => {
   let mongoClient;
   //
   let sortBy;
-  if (sort === 'relevant') {
-    sortBy = { helpfulness: -1, dateType: -1 };
+  if (sort === 'helpful') {
+    sortBy = { helpfulness: -1 };
   } else if (sort === 'newest') {
     sortBy = { dateType: -1 };
-  } else {
-    sortBy = { helpfulness: -1 };
+  } else { // default to "relevance"
+    sortBy = { helpfulness: -1, dateType: -1 };
   }
   //
   try {
