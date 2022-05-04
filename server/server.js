@@ -23,16 +23,16 @@ api.use(express.urlencoded());
 api.use(express.json());
 
 if (loaderIOTesting) {
-  api.get('/loaderio-0cfe93f953c4641ac7b1ac282291d46e', (req, res) => {
-    res.sendFile(path.join(__dirname, 'loaderio-0cfe93f953c4641ac7b1ac282291d46e.txt'));
+  api.get('/loaderio-b3718423745b0017031d1ddddb78d887', (req, res) => {
+    res.sendFile(path.join(__dirname, 'loaderio.txt'));
   });
 
-  api.get('/loaderio-0cfe93f953c4641ac7b1ac282291d46e.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'loaderio-0cfe93f953c4641ac7b1ac282291d46e.txt'));
+  api.get('/loaderio-b3718423745b0017031d1ddddb78d887.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'loaderio.txt'));
   });
 
-  api.get('/loaderio-0cfe93f953c4641ac7b1ac282291d46e.txt', (req, res) => {
-    res.sendFile(path.join(__dirname, 'loaderio-0cfe93f953c4641ac7b1ac282291d46e.txt'));
+  api.get('/loaderio-b3718423745b0017031d1ddddb78d887.txt', (req, res) => {
+    res.sendFile(path.join(__dirname, 'loaderio.txt'));
   });
 }
 
