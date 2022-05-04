@@ -53,8 +53,6 @@ api.get('/reviews', (req, res) => {
       .then((reviews) => {
         if (err === 500) {
           res.status(500).send();
-        } else if (reviews.length === 0) {
-          res.status(404).send();
         } else {
           res.status(200).json({
             product_id: productId + productIdOffset,
