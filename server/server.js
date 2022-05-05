@@ -1,6 +1,4 @@
-if (process.env.NEWRELIC_ON) {
-  require('newrelic');
-}
+require('newrelic');
 const { config } = require('dotenv');
 const express = require('express');
 const path = require('path');
