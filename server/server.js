@@ -24,15 +24,15 @@ api.use(express.urlencoded());
 api.use(express.json());
 
 if (loaderIOTesting) {
-  api.get('/loaderio-b3718423745b0017031d1ddddb78d887', (req, res) => {
+  api.get('/loaderio-336a757fc1c9f09ea6e8ee062f03a993', (req, res) => {
     res.sendFile(path.join(__dirname, 'loaderio.txt'));
   });
 
-  api.get('/loaderio-b3718423745b0017031d1ddddb78d887.html', (req, res) => {
+  api.get('/loaderio-336a757fc1c9f09ea6e8ee062f03a993.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'loaderio.txt'));
   });
 
-  api.get('/loaderio-b3718423745b0017031d1ddddb78d887.txt', (req, res) => {
+  api.get('/loaderio-336a757fc1c9f09ea6e8ee062f03a993.txt', (req, res) => {
     res.sendFile(path.join(__dirname, 'loaderio.txt'));
   });
 }
