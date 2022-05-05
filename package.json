@@ -21,6 +21,7 @@
     "eslint-plugin-import": "^2.25.4",
     "jest": "^27.5.1",
     "k6": "^0.0.0",
+    "newrelic": "^8.10.0",
     "nodemon": "^2.0.15",
     "supertest": "^6.2.2"
   },
