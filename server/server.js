@@ -2,6 +2,10 @@ const { config } = require('dotenv');
 const express = require('express');
 const path = require('path');
 
+if (process.env.NEWRELIC_ON) {
+  require('newrelic');
+}
+
 config();
 
 const { countReviews } = require('../database/helpers');
