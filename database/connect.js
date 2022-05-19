@@ -5,9 +5,7 @@ const connectToDatabase = async (url) => {
 
   try {
     mongoClient = new MongoClient(url);
-    // console.log('Connecting to MongoDB...');
     await mongoClient.connect();
-    // console.log('Successfully connected to MongoDB!');
     return mongoClient;
   } catch (error) {
     console.log('Connection to MongoDB failed!', error);

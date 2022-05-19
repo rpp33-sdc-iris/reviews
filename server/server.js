@@ -95,7 +95,7 @@ api.get('/reviews/meta/', (req, res) => {
 });
 
 api.post('/reviews/', (req, res) => {
-  // some req.body values NOT trusted
+  // req.body values NOT trusted
   req.body.product_id -= productIdOffset;
   let err;
 
