@@ -111,3 +111,12 @@ config.js
 
 # original data
 database/original-data/*.csv
+
+globalConfig.json
+
+# PEM keys
+
+/pem_keys
+
+# New Relic config
+newrelic.js

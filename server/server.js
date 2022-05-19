@@ -1,89 +1,204 @@
+// require('newrelic');
+const { config } = require('dotenv');
 const express = require('express');
-const { db } = require('../database/database');
-const { getProductMetadata } = require('../database/database');
-const { getReviews } = require('../database/database');
-const { markReviewHelpful } = require('../database/database');
-const { markReviewReported } = require('../database/database');
-const { postReview } = require('../database/database');
+const path = require('path');
+
+config();
+
+const { countReviews } = require('../database/helpers');
+const { getProductMetadata } = require('../database/helpers');
+const { getReviews } = require('../database/helpers');
+const { markReviewHelpful } = require('../database/helpers');
+const { markReviewReported } = require('../database/helpers');
+const { postReview } = require('../database/helpers');
+
+const productIdOffset = Number(process.env.PRODUCTID_OFFSET);
+const loaderIOTesting = process.env.LOADERIO_TESTING;
+const port = 8080;
+
+let reviewCount;
+let firstCountDone = false;
 
 const api = express();
 api.use(express.urlencoded());
-const port = 3000;
+api.use(express.json());
 
-api.get('/reviews/', (req, res) => {
-  // product_id value NOT trusted
-  const productId = req.query.product_id;
-  const { sort } = req.body;
-  // const page = req.body.page;    // always equal to 1
-  // const count = req.body.count;  // always equal to 1000
-  getReviews(productId, sort)
-    .then((result) => {
-      if (result === 0) {
-        res.status(404).send();
-      } else {
-        res.status(200).json({
-          product_id: productId,
-          page: 1,
-          count: 1000,
-          results: [result],
-        });
-      }
-    });
-  //
+if (loaderIOTesting) {
+  api.get('/loaderio-336a757fc1c9f09ea6e8ee062f03a993', (req, res) => {
+    res.sendFile(path.join(__dirname, 'loaderio.txt'));
+  });
+
+  api.get('/loaderio-336a757fc1c9f09ea6e8ee062f03a993.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'loaderio.txt'));
+  });
+
+  api.get('/loaderio-336a757fc1c9f09ea6e8ee062f03a993.txt', (req, res) => {
+    res.sendFile(path.join(__dirname, 'loaderio.txt'));
+  });
+}
+
+api.get('/reviews', (req, res) => {
+  // product_id, sort, page, and count values NOT trusted
+  // page always equal to 1 & count always equal to 1000
+  let err;
+  const productId = Number(req.query.product_id) - productIdOffset;
+  if (Number.isNaN(productId)) {
+    res.status(400).send();
+  } else {
+    const { sort } = req.query;
+    getReviews(productId, sort)
+      .catch(() => {
+        console.log('Error retrieving reviews');
+        err = 500;
+      })
+      .then((reviews) => {
+        if (err === 500) {
+          res.status(500).send();
+        } else {
+          res.status(200).json({
+            product_id: productId + productIdOffset,
+            page: 1,
+            count: 1000,
+            results: reviews,
+          });
+        }
+      });
+  }
 });
 
 api.get('/reviews/meta/', (req, res) => {
   // product_id value NOT trusted
-  const productId = req.query.product_id;
-  getProductMetadata(productId)
-    .then((result) => {
-      if (result === 0) {
-        res.status(404).send();
-      } else {
-        res.status(200).json(result);
-      }
-    });
+  let err;
+  let productId = Number(req.query.product_id);
+  if (Number.isNaN(productId)) {
+    res.status(400).send();
+  } else {
+    productId -= productIdOffset;
+    getProductMetadata(productId)
+      .catch(() => {
+        console.log('Error retrieving product metadata');
+        err = 500;
+      })
+      .then((productMetadata) => {
+        if (err === 500) {
+          res.status(500).send();
+        } else if (productMetadata === null) {
+          res.status(404).send();
+        } else {
+          const modifiedProductMetadata = productMetadata;
+          modifiedProductMetadata.product_id += productIdOffset;
+          res.status(200).json(modifiedProductMetadata);
+        }
+      });
+  }
   //
 });
 
 api.post('/reviews/', (req, res) => {
   // req.body values NOT trusted
-  postReview(req.body)
-    .then((result) => {
-      if (result === 0) {
-        res.status(500).send();
-      } else {
-        res.status(201).send();
-      }
+  req.body.product_id -= productIdOffset;
+  let err;
+
+  if (!firstCountDone) {
+    countReviews()
+      .then((count) => {
+        const nextReviewId = count + 1;
+        postReview(req.body, nextReviewId)
+          .catch((error) => {
+            console.log('Error posting new review: ', error);
+            err = 500;
+          })
+          .then(() => {
+            if (err === 500) {
+              res.status(500).send();
+            } else {
+              res.status(201).send();
+            }
+          });
+      });
+  } else {
+    reviewCount += 1;
+    postReview(req.body, reviewCount)
+      .catch((error) => {
+        console.log('Error posting new review: ', error);
+        err = 500;
+      })
+      .then(() => {
+        if (err === 500) {
+          res.status(500).send();
+        } else {
+          res.status(201).send();
+        }
+      });
+  }
+});
+
+api.put('/reviews/:review_id/helpful', (req, res) => {
+  // review_id value NOT trusted
+  let err;
+  const reviewId = Number(req.params.review_id);
+  if (Number.isNaN(reviewId)) {
+    res.status(400).send();
+  } else {
+    markReviewHelpful(reviewId)
+      .catch(() => {
+        console.log('Error marking review helpful');
+        err = 500;
+      })
+      .then(() => {
+        if (err === 500) {
+          res.status(500).send();
+        } else {
+          res.status(201).send();
+        }
+      });
+  }
+});
+
+api.put('/reviews/:review_id/report', (req, res) => {
+  let err;
+  const reviewId = Number(req.params.review_id);
+  if (Number.isNaN(reviewId)) {
+    res.status(400).send();
+  } else {
+    markReviewReported(reviewId)
+      .catch(() => {
+        console.log('Error marking review reported');
+        err = 500;
+      })
+      .then(() => {
+        if (err === 500) {
+          res.status(500).send();
+        } else {
+          res.status(201).send();
+        }
+      });
+  }
+});
+
+const startServer = async () => {
+  let countingError = false;
+  //
+  try {
+    api.listen(port, () => {
+      console.log(`Listening for requests on port ${port}`);
     });
-});
-
-api.put('reviews/:review_id/helpful', (req, res) => {
-  const reviewId = req.params.review_id;
-  markReviewHelpful(reviewId)
-    .then((result) => {
-      if (result === 0) {
-        res.status(500).send();
-      } else {
-        res.status(201).send();
+    try {
+      reviewCount = await countReviews();
+    } catch (error) {
+      countingError = true;
+    } finally {
+      if (!countingError) {
+        firstCountDone = true;
       }
-    });
-});
+    }
+    console.log(`There are ${reviewCount} reviews`);
+  } catch (error) {
+    console.log('Could not count reviews');
+    process.exit();
+  }
+};
 
-api.put('reviews/:review_id/report', (req, res) => {
-  const reviewId = req.params.review_id;
-  markReviewReported(reviewId)
-    .then((result) => {
-      if (result === 0) {
-        res.status(500).send();
-      } else {
-        res.status(201).send();
-      }
-    });
-});
+startServer();
 
-api.listen(port, () => {
-  console.log(`Listening on port ${port}`);
-});
-
-module.exports.db = db;
+module.exports.api = api;
