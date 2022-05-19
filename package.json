@@ -11,8 +11,7 @@
     "test": "jest test",
     "test-coverage": "jest test --coverage",
     "start-server": "node ./server/server.js",
-    "start-dev-server": "nodemon ./server/server.js",
-    "getdbreadtimes": "node ./database/getdbreadtimes"
+    "start-dev-server": "nodemon ./server/server.js"
   },
   "devDependencies": {
     "@shelf/jest-mongodb": "^2.2.1",
